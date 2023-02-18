@@ -3,8 +3,8 @@
 # ContinualLM    
  <p align="center">    
     <br>    
-    <a href="https://github.com/ZixuanKe/ContinualLM">    
-        <img src="https://github.com/ZixuanKe/ContinualLM/blob/main/docs/icon.png" width="200"/>    
+    <a href="https://github.com/UIC-Liu-Lab//ContinualLM">    
+        <img src="https://github.com/UIC-Liu-Lab/ContinualLM/blob/main/docs/icon.png" width="200"/>    
     </a>       
         <figcaption>Imagine an LM that not only effortlessly acquires new knowledge but also retains its mastery of skills, all while successfully transferring knowledge. Is it possible?</figcaption>  
     <br>    
@@ -119,16 +119,16 @@ max_samples=640000
     do    
       for ft_task in $(seq 0 ${pt_task});    
       do    
-		 python finetune.py \    
-		 --max_seq_length 164 \ 
-		 --pt_task ${pt_task} \ 
-		 --ft_task ${ft_task} \ 
-		 --idrandom ${idrandom} \ 
-		 --ntasks 6 \ 
-		 --max_samples ${max_samples} \
-		 --seed ${seed[$round]} \ 
-		 --baseline 'das'    
-		 done    
+       python finetune.py \    
+       --max_seq_length 164 \ 
+       --pt_task ${pt_task} \ 
+       --ft_task ${ft_task} \ 
+       --idrandom ${idrandom} \ 
+       --ntasks 6 \ 
+       --max_samples ${max_samples} \
+       --seed ${seed[$round]} \ 
+       --baseline 'das'    
+       done    
     done   
   done  
 done  
