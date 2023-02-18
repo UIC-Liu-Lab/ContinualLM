@@ -1,0 +1,13 @@
+restaurant_unsup	acl_unsup	ai_unsup	phone_unsup	pubmed_unsup	camera_unsup	
+phone_unsup	ai_unsup	pubmed_unsup	camera_unsup	restaurant_unsup	acl_unsup
+pubmed_unsup	camera_unsup	acl_unsup	restaurant_unsup	ai_unsup	phone_unsup
+camera_unsup	acl_unsup	phone_unsup	restaurant_unsup	pubmed_unsup	ai_unsup
+ai_unsup	pubmed_unsup	camera_unsup	phone_unsup	acl_unsup	restaurant_unsup
+acl_unsup
+ai_unsup	acl_unsup	restaurant_unsup	camera_unsup	phone_unsup	pubmed_unsup
+pubmed_unsup	acl_unsup	restaurant_unsup	camera_unsup	ai_unsup	phone_unsup
+restaurant_unsup	pubmed_unsup	ai_unsup	camera_unsup	phone_unsup	acl_unsup
+camera_unsup	phone_unsup	acl_unsup	ai_unsup	restaurant_unsup	pubmed_unsup
+phone_unsup	acl_unsup	ai_unsup	restaurant_unsup	camera_unsup	pubmed_unsup
+pubmed_unsup	ai_unsup	restaurant_unsup	camera_unsup	phone_unsup	acl_unsup
+wikitext_unsup	restaurant_unsup	acl_unsup	ai_unsup	phone_unsup	pubmed_unsup	camera_unsup
