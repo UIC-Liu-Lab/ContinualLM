@@ -6,7 +6,7 @@
     <a href="https://github.com/UIC-Liu-Lab//ContinualLM">    
         <img src="https://github.com/UIC-Liu-Lab/ContinualLM/blob/main/docs/icon.png" width="200"/>    
     </a>       
-        <figcaption>Imagine an LM that not only effortlessly acquires new knowledge but also retains its mastery of skills, all while successfully transferring knowledge. Is it possible?</figcaption>  
+        <figcaption>Imagine an LM that not only effortlessly acquires new knowledge but also retains its mastery of skills, all while successfully transferring knowledge. Is it even possible?</figcaption>  
     <br>    
 <p>
   
@@ -20,7 +20,7 @@
  - [End-task Fine-tuning](#end-task-fine-tuning)  
  - [Checkpoints in Huggingface](#checkpoints-in-huggingface)  
  - [Reference](#reference)  
- - [Acknowledgement](#acknowledgement)  
+ - [Contact](#contact)  
   
 ## Introduction    
  In 2021, we introduced  [Pycontinual](https://github.com/ZixuanKe/PyContinual), a straightforward and flexible framework for continual learning. Our research has benefited significantly from this framework. Today, we are excited to announce the launch of **ContinualLM**, an extensible continual learning framework focused on language models (LMs), designed to sustain the benefits of continual learning (CL) in this field.    
@@ -33,12 +33,12 @@ Our repository includes a PyTorch implementation of a collection of state-of-the
     
     
 * From our group:
-   * **DAS**: [Continual Learning of Language Models](https://arxiv.org/abs/2210.05549), Ke et al., ICLR 2023    
-   * **CPT**: [Continual Training of Language Models for Few-Shot Learning](https://arxiv.org/abs/2210.05549), Ke et al., EMNLP 2022    
-   * **DGA**: [Adapting a Language Model While Preserving its General Knowledge](https://arxiv.org/abs/2301.08986), Ke et al., EMNLP 2022    
-   * **CTR**: [Achieving Forgetting Prevention and Knowledge Transfer in Continual Learning](https://proceedings.neurips.cc/paper/2021/hash/bcd0049c35799cdf57d06eaf2eb3cff6-Abstract.html), Ke et al., NeurIPS 2021  
-   *  **CLASSIC**: [CLASSIC: Continual and Contrastive Learning of Aspect Sentiment Classification Tasks](https://aclanthology.org/2021.emnlp-main.550/), Ke et al., EMNLP 2021    
-   * **B-CL**: [Adapting BERT for Continual Learning of a Sequence of Aspect Sentiment Classification Tasks](https://www.aclweb.org/anthology/2021.naacl-main.378.pdf), Ke et al., NAACL 2021   
+   * **DAS**: [Continual Learning of Language Models](https://arxiv.org/abs/2210.05549), ICLR 2023    
+   * **CPT**: [Continual Training of Language Models for Few-Shot Learning](https://arxiv.org/abs/2210.05549), EMNLP 2022    
+   * **DGA**: [Adapting a Language Model While Preserving its General Knowledge](https://arxiv.org/abs/2301.08986), EMNLP 2022    
+   * **CTR**: [Achieving Forgetting Prevention and Knowledge Transfer in Continual Learning](https://proceedings.neurips.cc/paper/2021/hash/bcd0049c35799cdf57d06eaf2eb3cff6-Abstract.html), NeurIPS 2021  
+   * **CLASSIC**: [CLASSIC: Continual and Contrastive Learning of Aspect Sentiment Classification Tasks](https://aclanthology.org/2021.emnlp-main.550/), EMNLP 2021    
+   * **B-CL**: [Adapting BERT for Continual Learning of a Sequence of Aspect Sentiment Classification Tasks](https://www.aclweb.org/anthology/2021.naacl-main.378.pdf), NAACL 2021   
    
 * From other groups **(more to come)**:
   * **DEMIX**: [Demix layers: Disentangling domains for modular language modeling](https://aclanthology.org/2022.naacl-main.407);, Gururangan et al., NAACL 2022)  
@@ -81,7 +81,7 @@ The architecture of ContinualLM largely follows that of  [Pycontinual](https://g
 
 ```conda create --name continuallm --file requirements.txt```
 
-**Attention**: Our model is based on `transformers==4.17.0` and `adapter-transformers==3.0.1`. We recommend using these specific versions, as using other versions may result in unexpected bugs.
+:warning: Our model is based on `transformers==4.17.0` and `adapter-transformers==3.0.1`. We recommend using these specific versions, as using other versions may result in unexpected bugs.
   
 ## Domain-adaptive Pre-training  
 This is where continual learning happens. We will learn a sequnce of domains.   

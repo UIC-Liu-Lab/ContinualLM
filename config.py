@@ -149,7 +149,10 @@ def parseing_posttrain():
     )
     parser.add_argument("--hub_token", type=str, help="The token to use to push to the Model Hub.")
     parser.add_argument('--fp16', action='store_true')
-    parser.add_argument("--baseline", type=str, help="The token to use to push to the Model Hub.")
+    parser.add_argument("--baseline",
+                        type=str,
+                        help="The supported baselines.",
+                        choices=["dga", "das", "adapter_hat", "adapter_bcl", "adapter_one", "adapter_classic", "prompt_one", "distill", "derpp", "ewc", "ncl", "one"])
     parser.add_argument('--share_weight', action='store_true')
     parser.add_argument(
         "--max_train_samples",
