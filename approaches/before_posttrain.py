@@ -87,11 +87,11 @@ def prepare(self,model, train_loader_subset, train_loader_subset_dataset, accele
             print('output_impt: ', output_impt)
 
 
-    if 'head_mask' in self.args.baseline:
+    if 'head_mask' in self.args.layer_to_mask:
         head_impt = head_impt
-    if 'intermediate_mask' in self.args.baseline:
+    if 'intermediate_mask' in self.args.layer_to_mask:
         intermediate_impt = intermediate_impt
-    if 'output_mask' in self.args.baseline:
+    if 'output_mask' in self.args.layer_to_mask:
         output_impt = output_impt
 
     return self,model,head_impt, intermediate_impt, output_impt,self_fisher,mask_pre,mask_back,buffer

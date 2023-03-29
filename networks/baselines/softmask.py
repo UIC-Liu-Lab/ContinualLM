@@ -173,21 +173,19 @@ def soft_mask_gradient(model, pre_head_impt, pre_intermediate_impt,pre_output_im
     model_ori = accelerator.unwrap_model(model)
 
     if accelerator.is_main_process and pre_head_impt is not None and epoch < 1 and step < 1:
-        if 'head_mask' in args.baseline:
+        if 'head_mask' in args.layer_to_mask:
             print('head usage: ', (pre_head_impt.sum() / pre_head_impt.numel()).item())
-        if 'intermediate_mask' in args.baseline:
+        if 'intermediate_mask' in args.layer_to_mask:
             print('intermediate usage: ', (pre_intermediate_impt.sum() / pre_intermediate_impt.numel()).item())
-        if 'output_mask' in args.baseline:
+        if 'output_mask' in args.layer_to_mask:
             print('output usage: ', (pre_output_impt.sum() / pre_output_impt.numel()).item())
-
 
     n_layers, n_heads = model_ori.model.config.num_hidden_layers, model_ori.model.config.num_attention_heads
     head_size = int(model_ori.model.config.hidden_size / model_ori.model.config.num_attention_heads)
 
-    # TODO: all these no need to write here, make the accompnay code cristal clear
     for layer in range(n_layers):
 
-        if 'head_mask' in args.baseline:
+        if 'head_mask' in args.layer_to_mask:
             head_impt = pre_head_impt[layer].unsqueeze(-1).repeat((1, head_size))
             head_impt = head_impt.flatten()
             head_mask = 1 - head_impt
@@ -204,7 +202,7 @@ def soft_mask_gradient(model, pre_head_impt, pre_intermediate_impt,pre_output_im
             model_ori.model.roberta.encoder.layer[layer].attention.output.dense.weight.grad *= head_mask
             model_ori.model.roberta.encoder.layer[layer].attention.output.dense.bias.grad *= head_mask
 
-        if 'intermediate_mask' in args.baseline:
+        if 'intermediate_mask' in args.layer_to_mask:
             intermediate_mask = (1 - pre_intermediate_impt[layer])
             model_ori.model.roberta.encoder.layer[
                 layer].intermediate.dense.weight.grad *= intermediate_mask.unsqueeze(1)
@@ -212,7 +210,7 @@ def soft_mask_gradient(model, pre_head_impt, pre_intermediate_impt,pre_output_im
                 layer].intermediate.dense.bias.grad *= intermediate_mask
             # compute_mask(model_ori.model.roberta.encoder.layer[layer].intermediate.dense.bias.grad,intermediate_impt)
 
-        if 'output_mask' in args.baseline:
+        if 'output_mask' in args.layer_to_mask:
             output_mask = (1 - pre_output_impt[layer])
             model_ori.model.roberta.encoder.layer[
                 layer].output.dense.weight.grad *= output_mask.unsqueeze(1)

@@ -227,12 +227,11 @@ def prepare_sequence_posttrain(args):
     if 'dga' in args.baseline:
         args.baseline += '_one'
         args.softmask_compute = 'before_distill'
+        args.layer_to_mask = 'head_mask'
 
     elif 'das' in args.baseline:
         args.softmask_compute = 'before_distill_after_mlm'
-
-
-    #TODO: DAS and more baselines
+        args.layer_to_mask = 'head_mask_intermediate_mask_output_mask'
 
 
     with open('./sequences/' + args.sequence_file, 'r') as f:

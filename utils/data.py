@@ -10,67 +10,6 @@ import numpy as np
 from dataclasses import dataclass
 import torch
 
-label_list_dict = \
-{
-    'conll2003': ['O', 'B-PER', 'I-PER', 'B-ORG', 'I-ORG', 'B-LOC', 'I-LOC', 'B-MISC', 'I-MISC'],
-    'wnut2017': ['O', 'B-location', 'I-location', 'B-corporation', 'I-corporation', 'B-person', 'I-person',
-                    'B-product', 'I-product', 'B-creative-work', 'I-creative-work',
-                    'B-group', 'I-group'],
-    'wikigold': ['O', 'B-PER', 'I-PER', 'B-ORG', 'I-ORG', 'B-LOC', 'I-LOC', 'B-MISC', 'I-MISC'],
-    'ontonote': ['O', 'B-PERSON', 'I-PERSON', 'B-NORP', 'I-NORP', 'B-FAC', 'I-FAC',
-                        'B-ORG', 'I-ORG', 'B-GPE', 'I-GPE',
-                        'B-LOC', 'I-LOC', 'B-PRODUCT', 'I-PRODUCT',
-                        'B-EVENT', 'I-EVENT','B-WORK_OF_ART','I-WORK_OF_ART',
-                        'B-LAW', 'I-LAW', 'B-LANGUAGE', 'I-LANGUAGE',
-                        'B-DATE', 'I-DATE', 'B-TIME', 'I-TIME',
-                        'B-PERCENT', 'I-PERCENT', 'B-MONEY', 'I-MONEY',
-                        'B-QUANTITY', 'I-QUANTITY', 'B-ORDINAL', 'I-ORDINAL',
-                        'B-CARDINAL', 'I-CARDINAL'
-                        ],
-    'btc': ['O', 'B-PER', 'I-PER', 'B-ORG', 'I-ORG', 'B-LOC', 'I-LOC', 'B-MISC', 'I-MISC'],
-    'ieer': ['O', 'B-PER', 'I-PER', 'B-LOC', 'I-LOC', 'B-ORG', 'I-ORG',
-                        'B-PCT', 'I-PCT', 'B-MON', 'I-MON',
-                        'B-TIM', 'I-TIM', 'B-DAT', 'I-DAT',
-                        'B-DUR', 'I-DUR','B-CAR','I-CAR',
-                        'B-MEA', 'I-MEA'
-                        ],
-    'ritter': ['O', 'B-person', 'I-person', 'B-geo-loc', 'I-geo-loc', 'B-facility', 'I-facility',
-                    'B-company', 'I-company', 'B-sportsteam', 'I-sportsteam',
-                    'B-musicartist', 'I-musicartist', 'B-product', 'I-product',
-                    'B-tvshow', 'I-tvshow','B-movie','I-movie',
-                    'B-other', 'I-other'
-                    ],
-    're3d': ['O', 'B-Person', 'I-Person', 'B-DocumentReference', 'I-DocumentReference', 'B-Location', 'I-Location',
-                        'B-MilitaryPlatform', 'I-MilitaryPlatform', 'B-Money', 'I-Money',
-                        'B-Nationality', 'I-Nationality', 'B-Organisation', 'I-Organisation',
-                        'B-Quantity', 'I-Quantity','B-Temporal','I-Temporal',
-                        'B-Weapon', 'I-Weapon'
-                        ],
-    'gum': ['O', 'B-person', 'I-person', 'B-place', 'I-place', 'B-organization', 'I-organization',
-                        'B-quantity', 'I-quantity', 'B-time', 'I-time',
-                        'B-event', 'I-event', 'B-abstract', 'I-abstract',
-                        'B-substance', 'I-substance','B-object','I-object',
-                        'B-animal', 'I-animal','B-plant', 'I-plant'
-                        ]
-}
-
-
-
-label_to_id_dict = \
-{
-    'conll2003': {l: i for i, l in enumerate(label_list_dict['conll2003'])},
-    'wnut2017': {l: i for i, l in enumerate(label_list_dict['wnut2017'])},
-    'wikigold': {l: i for i, l in enumerate(label_list_dict['wikigold'])},
-    'ontonote': {l: i for i, l in enumerate(label_list_dict['ontonote'])},
-    'btc': {l: i for i, l in enumerate(label_list_dict['btc'])},
-    'ieer': {l: i for i, l in enumerate(label_list_dict['ieer'])},
-    'ritter': {l: i for i, l in enumerate(label_list_dict['ritter'])},
-    're3d': {l: i for i, l in enumerate(label_list_dict['re3d'])},
-    'gum': {l: i for i, l in enumerate(label_list_dict['gum'])},
-}
-
-
-
 
 def preprocess_function(examples, text_column, summary_column, args):
     prefix = args.source_prefix if args.source_prefix is not None else ""

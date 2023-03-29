@@ -183,7 +183,7 @@ def parseing_posttrain():
         action="store_true",
         help="Don't normalize all importance scores between 0 and 1",
     )
-    parser.add_argument("--how_to_block", type=str, help="['grad','random']")
+    parser.add_argument("--layer_to_mask", type=str, help="['head_mask','intermediate_mask','output_mask']")
     parser.add_argument(
         "--masking_threshold",
         default=0.5,

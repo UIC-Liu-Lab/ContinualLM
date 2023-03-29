@@ -224,7 +224,6 @@ def main():
     appr = Appr(args)
     appr.train(model,accelerator,train_dataset,train_dataloader,train_dataloader_subset,train_dataloader_subset_dataset)
 
-# TODO: may need to change when we want to combine
 
 if __name__ == "__main__":
     main()
