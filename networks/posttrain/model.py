@@ -100,9 +100,6 @@ class MyModel(nn.Module):
                         -1])  # no need for mean. The simplist way to do distillation
 
                 outputs = self.model(input_ids=input_ids, labels=labels, attention_mask=attention_mask,
-                                     head_mask=head_mask,
-                                     output_mask=output_mask,
-                                     intermediate_mask=intermediate_mask,
                                      output_hidden_states=True)
 
             loss = outputs.loss

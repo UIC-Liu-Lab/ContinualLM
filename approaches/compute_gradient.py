@@ -28,9 +28,7 @@ def compute(self,model,head_impt, intermediate_impt, output_impt,batch, loss,buf
         loss += self.mse(
             replay_outputs.hidden_states[-1], replay_batch['logits']) * self.args.replay_alpha
         
-    # We keep track of the loss at each epoch
-    loss = loss / self.args.gradient_accumulation_steps
-    
+
     if 'dga' in self.args.baseline or 'das' in self.args.baseline:
         contrast_loss = outputs.contrast_loss  # loss 1
         loss = loss + contrast_loss
