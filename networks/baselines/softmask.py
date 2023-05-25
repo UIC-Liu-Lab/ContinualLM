@@ -16,7 +16,7 @@ from transformers import (
 )
 from torch import nn
 from itertools import zip_longest
-from utils import utils
+import utils
 import os
 import torch.distributed as dist
 import torch.autograd as autograd

@@ -15,7 +15,6 @@ from transformers import (
 logger = logging.getLogger(__name__)
 MODEL_CONFIG_CLASSES = list(MODEL_MAPPING.keys())
 MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
-from utils import utils
 from networks.baselines import ewc, hat, softmask, memory
 
 
@@ -44,7 +43,7 @@ def compute(self,model, train_loader_subset, self_fisher,mask_pre, buffer,accele
             or 'adapter_bcl' in self.args.baseline\
             or 'adapter_classic' in self.args.baseline:
         self.args.s = self.args.smax
-        mask = self.mask(model,accelerator)
+        mask = self.mask(model,accelerator,self.args)
         hat.compute(model, accelerator, mask_pre, mask, self.get_view_for, self.args)
     elif 'derpp' in self.args.baseline:
         # add data to the buffer

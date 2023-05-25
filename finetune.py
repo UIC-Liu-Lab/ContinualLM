@@ -91,7 +91,7 @@ def main():
 
     logger.info('==> Preparing data..')
 
-    datasets = get_dataset(args.dataset_name, tokenizer=tokenizer,args=args)
+    datasets = get_adtaset(args.dataset_name, tokenizer=tokenizer,args=args)
     print('dataset_name: ',args.dataset_name)
 
     print('train_loader: ',len(datasets['train']))

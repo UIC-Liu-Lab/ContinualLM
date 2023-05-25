@@ -75,7 +75,7 @@ def compute(self,model,head_impt, intermediate_impt, output_impt,batch, loss,buf
             or 'adapter_classic' in self.args.baseline:
         # Compensate embedding gradients
         for n, p in model.named_parameters():
-            if 'adapters.e' in n or ('model.e' in n and p.grad is not None):
+            if ('adapters.e' in n or 'model.e' in n) and p.grad is not None:
                 num = torch.cosh(torch.clamp(self.args.s * p.data, -self.args.thres_cosh,
                                              self.args.thres_cosh)) + 1
                 den = torch.cosh(p.data) + 1

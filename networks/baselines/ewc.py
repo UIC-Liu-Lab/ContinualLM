@@ -5,11 +5,11 @@ from tqdm.auto import tqdm
 import torch
 import torch.distributed as dist
 import os
-from utils import utils
+import utils
 import math
 
 def compute(train_dataloader_prune,model,self_fisher,accelerator,args):
-    fisher_path = os.path.join(args.output_dir, 'fisher')
+    fisher_path = os.path.join(args.output_dir + '../', 'fisher')
 
     if args.ft_task > 0:
         fisher_old = {}
@@ -65,7 +65,7 @@ def compute(train_dataloader_prune,model,self_fisher,accelerator,args):
     accelerator.wait_for_everyone()
 
     for k,v in self_fisher.items():
-        self_fisher[k] = utils.gather_mean(self_fisher[k])
+        self_fisher[k] = utils.model.gather_mean(self_fisher[k])
 
     if accelerator.is_main_process:
         torch.save(self_fisher, fisher_path)

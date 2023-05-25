@@ -237,7 +237,9 @@ def parseing_posttrain():
     parser.add_argument('--num_semantic_cap',default=3,type=int,required=False,help='(default=%(default)d)')
     parser.add_argument('--softmask_compute', type=str)
     parser.add_argument("--eval_only", action="store_true")
-
+    parser.add_argument(
+        "--reduction_factor", type=float, default=16, help="Ratio of tokens to mask for masked language modeling loss"
+    )
     args = parser.parse_args()
 
     return args
@@ -333,7 +335,9 @@ def parseing_finetune():
 
     parser.add_argument("--eval_only", action="store_true")
     parser.add_argument("--sequence_file",type=str, help="sequence file")
-
+    parser.add_argument(
+        "--reduction_factor", type=float, default=16, help="Ratio of tokens to mask for masked language modeling loss"
+    )
     args = parser.parse_args()
 
     return args

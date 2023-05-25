@@ -41,8 +41,8 @@ def prepare(self,model, train_loader_subset, train_loader_subset_dataset, accele
             or 'transformer_hat' in self.args.baseline \
             or 'adapter_bcl' in self.args.baseline \
             or 'adapter_classic' in self.args.baseline:  # BCL included HAT
-        print('load mask matrix **************')
         if os.path.exists(os.path.join(self.args.output_dir + '../', 'mask_pre')):
+            print('load mask matrix **************')
             mask_pre = torch.load(os.path.join(self.args.output_dir + '../', 'mask_pre'))
             mask_back = torch.load(os.path.join(self.args.output_dir + '../', 'mask_back'))
 
@@ -55,7 +55,7 @@ def prepare(self,model, train_loader_subset, train_loader_subset_dataset, accele
     elif 'derpp' in self.args.baseline:
         buffer = memory.Buffer(int(self.args.replay_sample_per_task * self.args.ntasks),args=self.args)
         if self.args.pt_task > 0:
-            buffer.load(os.path.join(self.args.prev_output, 'buffer'))
+            buffer.load(os.path.join(self.args.output_dir + '../', 'buffer'))
 
     elif self.args.pt_task > 0 and 'adapter_demix' in self.args.baseline:  # initialize the new adapter using the nearest adapter
         model = demix.compute(train_loader_subset, train_loader_subset_dataset, model, accelerator,self.args)
@@ -79,20 +79,19 @@ def prepare(self,model, train_loader_subset, train_loader_subset_dataset, accele
                                                  prune_loss='before_mlm')
 
         accelerator.wait_for_everyone()
-        head_impt, intermediate_impt, output_impt = softmask.accumulate_impt(self.args)
+        head_impt_, intermediate_impt_, output_impt_ = softmask.accumulate_impt(self.args)
 
         if accelerator.is_main_process:
             print('head_impt: ', head_impt)
             print('intermediate_impt: ', intermediate_impt)
             print('output_impt: ', output_impt)
 
-
-    if 'head_mask' in self.args.layer_to_mask:
-        head_impt = head_impt
-    if 'intermediate_mask' in self.args.layer_to_mask:
-        intermediate_impt = intermediate_impt
-    if 'output_mask' in self.args.layer_to_mask:
-        output_impt = output_impt
+        if 'head_mask' in self.args.layer_to_mask:
+            head_impt = head_impt_
+        if 'intermediate_mask' in self.args.layer_to_mask:
+            intermediate_impt = intermediate_impt_
+        if 'output_mask' in self.args.layer_to_mask:
+            output_impt = output_impt_
 
     return self,model,head_impt, intermediate_impt, output_impt,self_fisher,mask_pre,mask_back,buffer
 

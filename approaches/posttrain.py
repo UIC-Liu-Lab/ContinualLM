@@ -24,7 +24,7 @@ from transformers import (
     set_seed,
 )
 
-from utils import utils
+import utils.roberta
 from approaches import after_posttrain, before_posttrain, compute_loss, compute_gradient, update_model
 from networks.baselines import ewc, hat, softmask, memory
 
@@ -41,6 +41,10 @@ class Appr(object):
         self.args = args
         self.tanh = torch.nn.Tanh()
         self.sigmoid = torch.nn.Sigmoid()
+        self.mask = utils.model.mask
+        self.get_view_for = utils.model.get_view_for
+        self.get_view_for_tsv = utils.model.get_view_for_tsv
+
         return
 
 
@@ -133,7 +137,7 @@ class Appr(object):
                     model.train()
                     for step, batch in enumerate(train_loader):
 
-                        self, model, outputs = compute_loss.compute(self,model,batch,head_impt,intermediate_impt,output_impt,self_fisher,mask_pre,accelerator)
+                        self, model, outputs = compute_loss.compute(self,model,batch,head_impt,intermediate_impt,output_impt,self_fisher,mask_pre,train_loader,step,accelerator)
                         loss = outputs.loss  # loss 1
                         model = compute_gradient.compute(self,model,head_impt, intermediate_impt, output_impt,batch, loss,buffer,mask_back,outputs,epoch,step,accelerator)
                         global_step += 1

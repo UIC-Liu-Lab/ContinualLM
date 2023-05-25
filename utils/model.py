@@ -264,9 +264,6 @@ def prepare_sequence_posttrain(args):
                     os.makedirs(output + 'before_distill' + str(pre_t) + '/', exist_ok=True)
                 args.saved_output_dir += [output_dir + '/' + str(data[args.pt_task]) + "_roberta/before_distill" + str(args.pt_task) + '/' ]
 
-            if 'before_mlm' in args.softmask_compute and 'one' not in args.baseline:
-                os.makedirs(output + 'before_mlm/', exist_ok=True)
-                args.saved_output_dir += [output_dir + '/' + str(data[0]) + "_roberta/before_mlm/" ] # only use the first one
 
             if 'after_mlm' in args.softmask_compute:
                 os.makedirs(output + 'after_mlm'+ str(pre_t) + '/', exist_ok=True)
@@ -281,9 +278,11 @@ def prepare_sequence_posttrain(args):
 
 
     args.output_dir = output
+    args.task = args.pt_task
 
     args.data = data
     args.base_model_name_or_path = "roberta-base"
+    args.eval_t = args.pt_task # we need to use the adapter/plugin
 
     if 'comb' in args.baseline:
         args.dataset_name = '_unsup'
@@ -418,10 +417,15 @@ def _lookfor_model_adapter(args,training_type):
     if 'one' in args.baseline or args.pt_task == 0:
         model.add_adapter('adapter') # no mh_adapter by default
     else:
-        model.load_adapter(args.prev_output)
+        model.load_adapter(args.model_name_or_path)
 
     model.train_adapter('adapter') # note this train_adapter will affect even the parent node
     # train adapter reopen the adapter
+
+    if 'adapter_classic' in args.baseline:
+        for n,p in model.named_parameters():  # nothing is trainable in teacher
+            if 'self_attns' in n: # classic
+                p.requires_grad = True
 
 
     teacher = MODEL.from_pretrained(
@@ -524,298 +528,6 @@ def lookfor_baseline_variable(self,args):
 
     return lookfor_baseline_variable(self,args)
 
-
-
-def lookfor_main_metric(results,args):
-
-
-    if args.task_name in args.asc_datasets:
-        eval_main = results['macro_f1']
-
-    elif args.task_name in args.ccd_datasets:
-        eval_main = results['macro_f1']
-
-    elif args.task_name in args.ner_datasets:
-        eval_main = results['f1']
-
-    elif args.task_name in args.dialogue_datasets:
-        eval_main = results['bleu']
-
-    elif args.task_name in args.summerization_datasets:
-        eval_main = results['rouge1']  # NER and generation
-
-    return eval_main
-
-def write_result(results,eval_t,args):
-    # logger.info( "{} On {}, last epoch rougeLsum = {:.4f}, (seed={})".format(args.model_name_or_path, args.task_name, rougeLsum,args.seed))
-
-
-    progressive_main_path = os.path.join(args.output_dir + '/../', 'progressive_main_' + str(args.seed))
-    if os.path.exists(progressive_main_path):
-        eval_main = np.loadtxt(progressive_main_path)
-    else:
-        eval_main = np.zeros((args.ntasks, args.ntasks), dtype=np.float32)
-
-    eval_main[args.ft_task][eval_t] = lookfor_main_metric(results,args)
-
-    np.savetxt(progressive_main_path, eval_main, '%.4f', delimiter='\t')
-
-    if args.task_name in args.asc_datasets or args.task_name in args.ccd_datasets:
-        progressive_micro_f1_path = os.path.join(args.output_dir + '/../',
-                                                 'progressive_micro_f1_' + str(args.seed))
-        progressive_macro_f1_path = os.path.join(args.output_dir + '/../',
-                                                 'progressive_macro_f1_' + str(args.seed))
-        progressive_accuracy_path = os.path.join(args.output_dir + '/../',
-                                                 'progressive_accuracy_' + str(args.seed))
-        progressive_loss_path = os.path.join(args.output_dir + '/../', 'progressive_loss_' + str(args.seed))
-
-        if os.path.exists(progressive_micro_f1_path):
-            micro_f1 = np.loadtxt(progressive_micro_f1_path)
-            macro_f1 = np.loadtxt(progressive_macro_f1_path)
-            accuracy = np.loadtxt(progressive_accuracy_path)
-            loss = np.loadtxt(progressive_loss_path)
-
-        else:
-            micro_f1 = np.zeros((args.ntasks, args.ntasks), dtype=np.float32)
-            macro_f1 = np.zeros((args.ntasks, args.ntasks), dtype=np.float32)
-            accuracy = np.zeros((args.ntasks, args.ntasks), dtype=np.float32)
-            loss = np.zeros((args.ntasks, args.ntasks), dtype=np.float32)
-
-
-        micro_f1[args.ft_task][eval_t] = results['micro_f1']
-        macro_f1[args.ft_task][eval_t] = results['macro_f1']
-        accuracy[args.ft_task][eval_t] = results['accuracy']
-        loss[args.ft_task][eval_t] = results['loss']
-
-        np.savetxt(progressive_micro_f1_path, micro_f1, '%.4f', delimiter='\t')
-        np.savetxt(progressive_macro_f1_path, macro_f1, '%.4f', delimiter='\t')
-        np.savetxt(progressive_accuracy_path, accuracy, '%.4f', delimiter='\t')
-        np.savetxt(progressive_loss_path, loss, '%.4f', delimiter='\t')
-
-
-    elif args.task_name in args.ner_datasets:
-        progressive_f1_path = os.path.join(args.output_dir + '/../', 'progressive_f1_' + str(args.seed))
-        progressive_precision_path = os.path.join(args.output_dir + '/../',
-                                                  'progressive_precision_' + str(args.seed))
-        progressive_recall_path = os.path.join(args.output_dir + '/../',
-                                               'progressive_recall_' + str(args.seed))
-        progressive_accuracy_path = os.path.join(args.output_dir + '/../',
-                                                 'progressive_accuracy_' + str(args.seed))
-
-        if os.path.exists(progressive_f1_path):
-            f1 = np.loadtxt(progressive_f1_path)
-            precision = np.loadtxt(progressive_precision_path)
-            recall = np.loadtxt(progressive_recall_path)
-            accuracy = np.loadtxt(progressive_accuracy_path)
-
-        else:
-            f1 = np.zeros((args.ntasks, args.ntasks), dtype=np.float32)
-            precision = np.zeros((args.ntasks, args.ntasks), dtype=np.float32)
-            recall = np.zeros((args.ntasks, args.ntasks), dtype=np.float32)
-            accuracy = np.zeros((args.ntasks, args.ntasks), dtype=np.float32)
-
-        f1[args.ft_task][eval_t] = results['f1']
-        precision[args.ft_task][eval_t] = results['precision']
-        recall[args.ft_task][eval_t] = results['recall']
-        accuracy[args.ft_task][eval_t] = results['accuracy']
-
-        np.savetxt(progressive_f1_path, f1, '%.4f', delimiter='\t')
-        np.savetxt(progressive_precision_path, precision, '%.4f', delimiter='\t')
-        np.savetxt(progressive_recall_path, recall, '%.4f', delimiter='\t')
-        np.savetxt(progressive_accuracy_path, accuracy, '%.4f', delimiter='\t')
-
-
-    elif args.task_name in args.dialogue_datasets:
-        progressive_bleu_path = os.path.join(args.output_dir + '/../', 'progressive_bleu_' + str(args.seed))
-
-        if os.path.exists(progressive_bleu_path):
-            bleu = np.loadtxt(progressive_bleu_path)
-        else:
-            bleu = np.zeros((args.ntasks, args.ntasks), dtype=np.float32)
-
-        bleu[args.ft_task][eval_t] = results['bleu']
-
-        np.savetxt(progressive_bleu_path, bleu, '%.4f', delimiter='\t')
-
-    else:
-        progressive_rouge1_path = os.path.join(args.output_dir + '/../',
-                                               'progressive_rouge1_' + str(args.seed))
-        progressive_rouge2_path = os.path.join(args.output_dir + '/../',
-                                               'progressive_rouge2_' + str(args.seed))
-        progressive_rougeL_path = os.path.join(args.output_dir + '/../',
-                                               'progressive_rougeL_' + str(args.seed))
-        progressive_rougeLsum_path = os.path.join(args.output_dir + '/../',
-                                                  'progressive_rougeLsum_' + str(args.seed))
-
-        if os.path.exists(progressive_rouge1_path):
-            rouge1 = np.loadtxt(progressive_rouge1_path)
-            rouge2 = np.loadtxt(progressive_rouge2_path)
-            rougeL = np.loadtxt(progressive_rougeL_path)
-            rougeLsum = np.loadtxt(progressive_rougeLsum_path)
-
-        else:
-            rouge1 = np.zeros((args.ntasks, args.ntasks), dtype=np.float32)
-            rouge2 = np.zeros((args.ntasks, args.ntasks), dtype=np.float32)
-            rougeL = np.zeros((args.ntasks, args.ntasks), dtype=np.float32)
-            rougeLsum = np.zeros((args.ntasks, args.ntasks), dtype=np.float32)
-
-        rouge1[args.ft_task][eval_t] = results['rouge1']
-        rouge2[args.ft_task][eval_t] = results['rouge2']
-        rougeL[args.ft_task][eval_t] = results['rougeL']
-        rougeLsum[args.ft_task][eval_t] = results['rougeLsum']
-
-        np.savetxt(progressive_rouge1_path, rouge1, '%.4f', delimiter='\t')
-        np.savetxt(progressive_rouge2_path, rouge2, '%.4f', delimiter='\t')
-        np.savetxt(progressive_rougeL_path, rougeL, '%.4f', delimiter='\t')
-        np.savetxt(progressive_rougeLsum_path, rougeLsum, '%.4f', delimiter='\t')
-
-    if args.ft_task == args.ntasks - 1:  # last ft task, we need a final one
-
-        final_main = os.path.join(args.output_dir, 'final_main_' + str(args.seed))
-        forward_main = os.path.join(args.output_dir, 'forward_main_' + str(args.seed))
-
-        if  'one' in args.baseline:
-            with open(final_main, 'w') as final_main_file:
-                for j in range(eval_main.shape[1]):
-                    final_main_file.writelines(str(eval_main[j][j]) + '\n')
-        else:
-            with open(final_main, 'w') as final_main_file,open(forward_main, 'w') as forward_main_file:
-                for j in range(eval_main.shape[1]):
-                    final_main_file.writelines(str(eval_main[-1][j]) + '\n')
-                    forward_main_file.writelines(str(eval_main[j][j]) + '\n')
-                    
-                    
-        if args.task_name in args.asc_datasets or args.task_name in args.ccd_datasets:
-            final_micro_f1 = os.path.join(args.output_dir, 'micro_f1_' + str(args.seed))
-            forward_micro_f1 = os.path.join(args.output_dir, 'forward_micro_f1_' + str(args.seed))
-
-            final_macro_f1 = os.path.join(args.output_dir, 'macro_f1_' + str(args.seed))
-            forward_macro_f1 = os.path.join(args.output_dir, 'forward_macro_f1_' + str(args.seed))
-
-            final_accuracy = os.path.join(args.output_dir, 'accuracy_' + str(args.seed))
-            forward_accuracy = os.path.join(args.output_dir, 'forward_accuracy_' + str(args.seed))
-
-            final_loss = os.path.join(args.output_dir, 'loss_' + str(args.seed))
-            forward_loss = os.path.join(args.output_dir, 'forward_loss_' + str(args.seed))
-
-            if  'one' in args.baseline:
-                with open(final_micro_f1, 'w') as micro_f1_file, open(final_macro_f1, 'w') as macro_f1_file, open(final_accuracy,
-                                                                                                          'w') as accuracy_file, open(
-                        final_loss, 'w') as loss_file:
-                    for j in range(micro_f1.shape[1]):
-                        micro_f1_file.writelines(str(micro_f1[j][j]) + '\n')
-                        macro_f1_file.writelines(str(macro_f1[j][j]) + '\n')
-                        accuracy_file.writelines(str(accuracy[j][j]) + '\n')
-                        loss_file.writelines(str(loss[j][j]) + '\n')
-
-            else:
-                with open(final_micro_f1, 'w') as final_micro_f1_file, open(final_macro_f1, 'w') as final_macro_f1_file, open(
-                        final_accuracy, 'w') as final_accuracy_file, open(final_loss, 'w') as final_loss_file, \
-                        open(forward_micro_f1, 'w') as forward_micro_f1_file, open(forward_macro_f1, 'w') as forward_macro_f1_file, open(
-                    forward_accuracy, 'w') as forward_accuracy_file, open(forward_loss, 'w') as forward_loss_file:
-
-                    for j in range(micro_f1.shape[1]):
-                        final_micro_f1_file.writelines(str(micro_f1[-1][j]) + '\n')
-                        final_macro_f1_file.writelines(str(macro_f1[-1][j]) + '\n')
-                        final_accuracy_file.writelines(str(accuracy[-1][j]) + '\n')
-                        final_loss_file.writelines(str(loss[-1][j]) + '\n')
-
-                        forward_micro_f1_file.writelines(str(micro_f1[j][j]) + '\n')
-                        forward_macro_f1_file.writelines(str(macro_f1[j][j]) + '\n')
-                        forward_accuracy_file.writelines(str(accuracy[j][j]) + '\n')
-                        forward_loss_file.writelines(str(loss[j][j]) + '\n')
-
-
-
-        elif args.task_name in args.ner_datasets:
-            final_f1 = os.path.join(args.output_dir, 'f1_' + str(args.seed))
-            forward_f1 = os.path.join(args.output_dir, 'forward_f1_' + str(args.seed))
-
-            final_precision = os.path.join(args.output_dir, 'precision_' + str(args.seed))
-            forward_precision = os.path.join(args.output_dir, 'forward_precision_' + str(args.seed))
-
-            final_recall = os.path.join(args.output_dir, 'recall_' + str(args.seed))
-            forward_recall = os.path.join(args.output_dir, 'forward_recall_' + str(args.seed))
-
-            final_accuracy = os.path.join(args.output_dir, 'accuracy_' + str(args.seed))
-            forward_accuracy= os.path.join(args.output_dir, 'forward_accuracy_' + str(args.seed))
-
-            if  'one' in args.baseline:
-                with open(final_f1, 'w') as f1_file, open(final_precision, 'w') as precision_file, open(final_recall,'w') as recall_file, open(final_accuracy, 'w') as accuracy_file:
-                    for j in range(f1.shape[1]):
-                        f1_file.writelines(str(f1[j][j]) + '\n')
-                        precision_file.writelines(str(precision[j][j]) + '\n')
-                        recall_file.writelines(str(recall[j][j]) + '\n')
-                        accuracy_file.writelines(str(accuracy[j][j]) + '\n')
-
-            else:
-                with open(final_f1, 'w') as final_f1_file, open(final_precision, 'w') as final_precision_file, open(
-                        final_recall, 'w') as final_recall_file, open(final_accuracy, 'w') as final_accuracy_file, \
-                        open(forward_f1, 'w') as forward_f1_file, open(forward_precision,
-                                                                               'w') as forward_precision_file, open(
-                    forward_recall, 'w') as forward_recall_file, open(forward_accuracy, 'w') as forward_accuracy_file:
-                    for j in range(f1.shape[1]):
-                        final_f1_file.writelines(str(f1[-1][j]) + '\n')
-                        final_precision_file.writelines(str(precision[-1][j]) + '\n')
-                        final_recall_file.writelines(str(recall[-1][j]) + '\n')
-                        final_accuracy_file.writelines(str(accuracy[-1][j]) + '\n')
-
-                        forward_f1_file.writelines(str(f1[j][j]) + '\n')
-                        forward_precision_file.writelines(str(precision[j][j]) + '\n')
-                        forward_recall_file.writelines(str(recall[j][j]) + '\n')
-                        forward_accuracy_file.writelines(str(accuracy[j][j]) + '\n')
-                        
-
-        elif args.task_name in args.dialogue_datasets:
-            final_bleu = os.path.join(args.output_dir, 'bleu_' + str(args.seed))
-            forward_bleu = os.path.join(args.output_dir, 'forward_bleu_' + str(args.seed))
-
-            if  'one' in args.baseline:
-                with open(final_bleu, 'w') as final_bleu_file:
-                    for j in range(bleu.shape[1]):
-                        final_bleu_file.writelines(str(bleu[j][j]) + '\n')
-            else:
-                with open(final_bleu, 'w') as final_bleu_file,open(forward_bleu, 'w') as forward_bleu_file:
-                    for j in range(bleu.shape[1]):
-                        final_bleu_file.writelines(str(bleu[-1][j]) + '\n')
-                        forward_bleu_file.writelines(str(bleu[j][j]) + '\n')
-                        
-                    
-        elif args.task_name in args.summerization_datasets:
-            final_rouge1 = os.path.join(args.output_dir, 'rouge1_' + str(args.seed))
-            forward_rouge1 = os.path.join(args.output_dir, 'forward_rouge1_' + str(args.seed))
-
-            final_rouge2 = os.path.join(args.output_dir, 'rouge2_' + str(args.seed))
-            forward_rouge2 = os.path.join(args.output_dir, 'forward_rouge2_' + str(args.seed))
-
-            final_rougeL = os.path.join(args.output_dir, 'rougeL_' + str(args.seed))
-            forward_rougeL = os.path.join(args.output_dir, 'forward_rougeL_' + str(args.seed))
-
-            final_rougeLsum = os.path.join(args.output_dir, 'rougeLsum_' + str(args.seed))
-            forward_rougeLsum = os.path.join(args.output_dir, 'forward_rougeLsum_' + str(args.seed))
-
-            if  'one' in args.baseline:  
-                with open(final_rouge1, 'w') as rouge1_file, open(final_rouge2, 'w') as rouge2_file, open(final_rougeL, 'w') as rougeL_file, open(final_rougeLsum, 'w') as rougeLsum_file:
-                    for j in range(rouge1.shape[1]):
-                        rouge1_file.writelines(str(rouge1[j][j]) + '\n')
-                        rouge2_file.writelines(str(rouge2[j][j]) + '\n')
-                        rougeL_file.writelines(str(rougeL[j][j]) + '\n')
-                        rougeLsum_file.writelines(str(rougeLsum[j][j]) + '\n')
-    
-            else:
-                with open(final_rouge1, 'w') as final_rouge1_file, open(final_rouge2, 'w') as final_rouge2_file, open(final_rougeL, 'w') as final_rougeL_file, open(final_rougeLsum, 'w') as final_rougeLsum_file,\
-                    open(forward_rouge1, 'w') as forward_rouge1_file, open(forward_rouge2, 'w') as forward_rouge2_file, open(forward_rougeL, 'w') as forward_rougeL_file, open(forward_rougeLsum, 'w') as forward_rougeLsum_file:
-                    for j in range(rouge1.shape[1]):
-                        final_rouge1_file.writelines(str(rouge1[-1][j]) + '\n')
-                        final_rouge2_file.writelines(str(rouge2[-1][j]) + '\n')
-                        final_rougeL_file.writelines(str(rougeL[-1][j]) + '\n')
-                        final_rougeLsum_file.writelines(str(rougeLsum[-1][j]) + '\n')
-
-                        forward_rouge1_file.writelines(str(rouge1[j][j]) + '\n')
-                        forward_rouge2_file.writelines(str(rouge2[j][j]) + '\n')
-                        forward_rougeL_file.writelines(str(rougeL[j][j]) + '\n')
-                        forward_rougeLsum_file.writelines(str(rougeLsum[j][j]) + '\n')
-                        
                         
 
 def gather_imp(head_imp):
@@ -839,16 +551,6 @@ def gather_mean(head_imp):
     head_importance = torch.mean(head_importance_list,dim=0)
     return head_importance
 
-def prompt_eval(self,model,dataloader,metric,eval_t, pred_file, target_file,accelerator):
-    tune_model = accelerator.unwrap_model(model).model
-    infer_model = accelerator.unwrap_model(model).teacher
-
-    results = self.eval(model=model, dataloader=dataloader, metric=metric, accelerator=accelerator, eval_t=eval_t,
-                        tune_model=tune_model, infer_model=infer_model, pred_file=pred_file, target_file=target_file)
-
-    return results
-
-
 
 def frequency_norm(frequency,eps=5e-5):
     frequency = (frequency - frequency.mean()) / (frequency.std()+eps)  # 2D, we need to deal with this for each layer
@@ -862,6 +564,18 @@ def sim_matrix(a, b, eps=1e-8):
     b_norm = b / torch.clamp(b_n, min=eps)
     sim_mt = torch.mm(a_norm, b_norm.transpose(0, 1))
     return sim_mt
+
+
+
+def deep_copy(model,accelerator,args):
+
+    unwrap_model = accelerator.unwrap_model(model)
+    unwrap_adaptive_model = deepcopy(unwrap_model)
+    optimizer_grouped_parameters = utils.optimize.lookfor_optimize(unwrap_adaptive_model,args)  # everything is based on adative_model
+    adaptive_optimizer = AdamW(optimizer_grouped_parameters)
+    adaptive_model,adaptive_optimizer = accelerator.prepare(unwrap_adaptive_model,adaptive_optimizer)
+
+    return adaptive_model,adaptive_optimizer
 
 
 
@@ -1054,13 +768,227 @@ class PositionalEncoding(nn.Module):
         return enc_input + self.pos_table[:, ranking].clone().detach()
 
 
+# https://github.com/Spijkervet/SimCLR/blob/master/simclr/modules/nt_xent.py
+class GatherLayer(torch.autograd.Function):
+    """Gather tensors from all process, supporting backward propagation."""
 
-def deep_copy(model,accelerator,args):
+    @staticmethod
+    def forward(ctx, input):
+        ctx.save_for_backward(input)
+        output = [torch.zeros_like(input) for _ in range(dist.get_world_size())] #TODO: what is a world size?
+        dist.all_gather(output, input)
+        return tuple(output)
 
-    unwrap_model = accelerator.unwrap_model(model)
-    unwrap_adaptive_model = deepcopy(unwrap_model)
-    optimizer_grouped_parameters = utils.optimize.lookfor_optimize(unwrap_adaptive_model,args)  # everything is based on adative_model
-    adaptive_optimizer = AdamW(optimizer_grouped_parameters)
-    adaptive_model,adaptive_optimizer = accelerator.prepare(unwrap_adaptive_model,adaptive_optimizer)
+    @staticmethod
+    def backward(ctx, *grads):
+        (input,) = ctx.saved_tensors
+        grad_out = torch.zeros_like(input)
+        grad_out[:] = grads[dist.get_rank()]
+        return grad_out
 
-    return adaptive_model,adaptive_optimizer
+
+
+class MyContrastive(nn.Module):
+    # https://github.com/facebookresearch/moco/blob/3631be074a0a14ab85c206631729fe035e54b525/moco/builder.py#L155
+    def __init__(self):
+        """
+        dim: feature dimension (default: 128)
+        K: queue size; number of negative keys (default: 65536)
+        m: moco momentum of updating key encoder (default: 0.999)
+        T: softmax temperature (default: 0.07)
+        """
+        super(MyContrastive, self).__init__()
+        self.n_gpu = torch.cuda.device_count()
+        self.T = 1
+        self.bce = torch.nn.BCEWithLogitsLoss()
+        self.ce = torch.nn.CrossEntropyLoss()
+        self.sup_con = SupConLoss()
+
+    def forward(self, x, order_x=None, labels=None, con_type=None):
+        """
+        labels indicate sample label
+        x include all samples to be contrast
+        """
+        if self.n_gpu > 1:
+            x = torch.cat(GatherLayer.apply(x), dim=0)
+            if order_x is not None:
+                order_x = torch.cat(GatherLayer.apply(order_x), dim=0)
+            elif labels is not None:
+                labels = torch.cat(GatherLayer.apply(labels), dim=0)
+
+        if con_type == 'supervised':
+            loss = self.sup_con(x.unsqueeze(1),labels)
+        elif con_type == 'unsupervised':
+            loss = self.sup_con(x)
+        elif con_type == 'soft_contrast':
+            loss = self.unsupervised_loss(x,order_x,labels)
+
+        return loss
+
+
+class SupConLoss(nn.Module):
+    """Supervised Contrastive Learning: https://arxiv.org/pdf/2004.11362.pdf.
+    It also supports the unsupervised contrastive loss in SimCLR"""
+    def __init__(self, temperature=1, contrast_mode='all',
+                 base_temperature=1):
+        super(SupConLoss, self).__init__()
+        self.temperature = temperature
+        self.contrast_mode = contrast_mode
+        self.base_temperature = base_temperature
+
+    def forward(self, features, labels=None, mask=None):
+        """Compute loss for model. If both `labels` and `mask` are None,
+        it degenerates to SimCLR unsupervised loss:
+        https://arxiv.org/pdf/2002.05709.pdf
+        Args:
+            features: hidden vector of shape [bsz, n_views, ...].
+            labels: ground truth of shape [bsz].
+            mask: contrastive mask of shape [bsz, bsz], mask_{i,j}=1 if sample j
+                has the same class as sample i. Can be asymmetric.
+        Returns:
+            A loss scalar.
+        """
+        device = (torch.device('cuda')
+                  if features.is_cuda
+                  else torch.device('cpu'))
+
+        if len(features.shape) < 3:
+            raise ValueError('`features` needs to be [bsz, n_views, ...],'
+                             'at least 3 dimensions are required')
+        if len(features.shape) > 3:
+            features = features.view(features.shape[0], features.shape[1], -1)
+
+        batch_size = features.shape[0]
+        if labels is not None and mask is not None:
+            raise ValueError('Cannot define both `labels` and `mask`')
+        elif labels is None and mask is None:
+            mask = torch.eye(batch_size, dtype=torch.float32).to(device)
+        elif labels is not None:
+            labels = labels.contiguous().view(-1, 1)
+            if labels.shape[0] != batch_size:
+                raise ValueError('Num of labels does not match num of features')
+            mask = torch.eq(labels, labels.T).float().to(device)
+        else:
+            mask = mask.float().to(device)
+
+        contrast_count = features.shape[1]
+        contrast_feature = torch.cat(torch.unbind(features, dim=1), dim=0)
+        if self.contrast_mode == 'one':
+            anchor_feature = features[:, 0]
+            anchor_count = 1
+        elif self.contrast_mode == 'all':
+            anchor_feature = contrast_feature
+            anchor_count = contrast_count
+        else:
+            raise ValueError('Unknown mode: {}'.format(self.contrast_mode))
+
+        # compute logits
+        anchor_dot_contrast = torch.div(
+            torch.matmul(anchor_feature, contrast_feature.T),
+            self.temperature)
+        # for numerical stability
+        logits_max, _ = torch.max(anchor_dot_contrast, dim=1, keepdim=True)
+        logits = anchor_dot_contrast - logits_max.detach()
+
+        # tile mask
+        mask = mask.repeat(anchor_count, contrast_count)
+        # mask-out self-contrast cases
+        logits_mask = torch.scatter(
+            torch.ones_like(mask),
+            1,
+            torch.arange(batch_size * anchor_count).view(-1, 1).to(device),
+            0
+        )
+        mask = mask * logits_mask
+
+        # compute log_prob
+        exp_logits = torch.exp(logits) * logits_mask
+        log_prob = logits - torch.log(exp_logits.sum(1, keepdim=True))
+
+        # compute mean of log-likelihood over positive
+        mean_log_prob_pos = (mask * log_prob).sum(1) / mask.sum(1)
+
+        # loss
+        loss = - (self.temperature / self.base_temperature) * mean_log_prob_pos
+        loss = loss.view(anchor_count, batch_size).mean()
+
+        return loss
+
+
+def tacl_loss(z1, z2, contrastive_labels, eps=0.0):
+    # https://github.com/yxuansu/TaCL/blob/main/pretraining/bert_contrastive.py
+    '''
+        contrasive_scores: bsz x seqlen x seqlen
+        contrasive_labels: bsz x seqlen; masked positions with 1., otherwise 0. I only want masked
+    '''
+    z1 = torch.cat(GatherLayer.apply(z1), dim=0)
+    z2 = torch.cat(GatherLayer.apply(z2), dim=0)
+    contrastive_labels = torch.cat(GatherLayer.apply(contrastive_labels), dim=0)
+
+    # if self.sim == 'dot_product':
+    contrastive_scores = torch.matmul(z1, z2.transpose(1, 2))
+
+    # elif self.sim == 'cosine':  # 'cosine'
+    #     masked_rep = masked_rep / masked_rep.norm(dim=2, keepdim=True)
+    #     truth_rep = truth_rep / truth_rep.norm(dim=2, keepdim=True)
+    #     contrastive_scores = torch.matmul(masked_rep,
+    #                                       truth_rep.transpose(1, 2)) / self.temperature  # bsz x seqlen x seqlen
+    #
+    #
+    bsz, seqlen, _ = contrastive_scores.size()
+    logprobs = F.log_softmax(contrastive_scores.view(-1, seqlen), dim=-1)
+    gold = torch.arange(seqlen).view(-1,)
+    gold = gold.expand(bsz, seqlen).contiguous().view(-1)
+    if contrastive_scores.is_cuda:
+        gold = gold.cuda(contrastive_scores.get_device())
+    loss =  -logprobs.gather(dim=-1, index=gold.unsqueeze(1)).squeeze(1)
+    loss = loss.view(bsz, seqlen) * contrastive_labels
+    loss = torch.sum(loss) / contrastive_labels.sum()
+    return loss
+
+
+def taco_loss(z1, z2):
+    # https://github.com/yxuansu/TaCL/blob/main/pretraining/bert_contrastive.py
+    '''
+        contrasive_scores: bsz x seqlen x seqlen
+        contrasive_labels: bsz x seqlen; masked positions with 1., otherwise 0. I only want masked
+    '''
+    z1 = torch.cat(GatherLayer.apply(z1), dim=0)
+    z2 = torch.cat(GatherLayer.apply(z2), dim=0)
+
+    z1 = z1 / z1.norm(dim=2, keepdim=True)
+    z2 = z2 / z2.norm(dim=2, keepdim=True)
+    contrastive_scores = torch.matmul(z1,z2.transpose(1, 2)) # bsz x seqlen x seqlen
+
+    #
+    bsz, seqlen, _ = contrastive_scores.size()
+    logprobs = F.log_softmax(contrastive_scores.view(-1, seqlen), dim=-1)
+    gold = torch.arange(seqlen).view(-1,)
+    gold = gold.expand(bsz, seqlen).contiguous().view(-1)
+    if contrastive_scores.is_cuda:
+        gold = gold.cuda(contrastive_scores.get_device())
+    loss =  -logprobs.gather(dim=-1, index=gold.unsqueeze(1)).squeeze(1)
+    loss = loss.view(bsz, seqlen)
+    loss = torch.sum(loss)
+    return loss
+
+
+
+class DiffLoss(torch.nn.Module):
+    # From: Domain Separation Networks (https://arxiv.org/abs/1608.06019)
+    # Konstantinos Bousmalis, George Trigeorgis, Nathan Silberman, Dilip Krishnan, Dumitru Erhan
+
+    def __init__(self):
+        super(DiffLoss, self).__init__()
+
+    def forward(self, D1, D2):
+        D1=D1.view(D1.size(0), -1)
+        D1_norm=torch.norm(D1, p=2, dim=1, keepdim=True).detach()
+        D1_norm=D1.div(D1_norm.expand_as(D1) + 1e-6)
+
+        D2=D2.view(D2.size(0), -1)
+        D2_norm=torch.norm(D2, p=2, dim=1, keepdim=True).detach()
+        D2_norm=D2.div(D2_norm.expand_as(D2) + 1e-6)
+
+        # return torch.mean((D1_norm.mm(D2_norm.t()).pow(2)))
+        return torch.mean((D1_norm.mm(D2_norm.t()).pow(2)))

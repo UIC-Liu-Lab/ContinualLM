@@ -76,8 +76,9 @@ ROBERTA_PRETRAINED_MODEL_ARCHIVE_LIST = [
     "roberta-large-openai-detector",
     # See all RoBERTa models at https://huggingface.co/models?filter=roberta
 ]
+import utils
 
-#TODO: because adapter has been changed, we need to re-write the complete class
+# because adapter has been changed, we need to re-write the complete class
 
 
 # Copied from transformers.models.modeling_bert.BertSelfOutput
@@ -783,13 +784,20 @@ class MyRobertaForMaskedLM(ModelWithHeadsAdaptersMixin, RobertaPreTrainedModel):
     def __init__(self, config,args):
         super().__init__(config)
 
-        self.roberta = MyRobertaModel(config, add_pooling_layer=False)
+        self.roberta = MyRobertaModel(config, add_pooling_layer=False, args=args)
         self.lm_head = RobertaLMHead(config)
         self.args = args
 
         # The LM head weights require special treatment only when they are tied with the word embeddings
         self.update_keys_to_ignore(config, ["lm_head.decoder.weight"])
         # Initialize weights and apply final processing
+
+        if 'adapter_classic' in args.baseline:
+            self.self_attns = nn.ModuleList()
+            for t in range(args.ntasks):
+                self.self_attns.append(utils.model.Self_Attn(t + 1))
+
+
         self.post_init()
 
 

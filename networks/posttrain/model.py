@@ -28,6 +28,8 @@ class MyModel(nn.Module):
         self.softmax = torch.nn.Softmax(dim=1)
         self.frequency_table = torch.Tensor([1 for _ in range(args.ntasks)]).float().cuda()
         self.kd_loss =  utils.model.DistillKL(1)
+        self.dropout = nn.Dropout(0.1)
+        self.contrast = utils.model.MyContrastive()
 
 
 
@@ -237,7 +239,7 @@ class MyModel(nn.Module):
 
                 z1 = outputs_teacher.hidden_states[-1]  # anchor: masks
                 z2 = outputs_ori.hidden_states[-1]  # positive samples: original
-                tacl_loss = utils.tacl_loss(z1, z2, (labels == -100).long(),
+                tacl_loss = utils.model.tacl_loss(z1, z2, (labels == -100).long(),
                                             eps=0.0)  # contrasive_labels: bsz x seqlen; masked positions with 0., otherwise 1.
 
             elif 'taco' in self.args.baseline and not prune_loss:
@@ -264,7 +266,7 @@ class MyModel(nn.Module):
                 global_z1 = F.normalize(global_z1, dim=1)
                 gloabl_z2 = F.normalize(gloabl_z2, dim=1)
 
-                taco_loss = utils.taco_loss(global_z1, gloabl_z2) * 1e-5
+                taco_loss = utils.model.taco_loss(global_z1, gloabl_z2) * 1e-5
 
             elif 'infoword' in self.args.baseline and not prune_loss:
 

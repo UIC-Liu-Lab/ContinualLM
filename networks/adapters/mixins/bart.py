@@ -8,7 +8,6 @@ from ..model_mixin import InvertibleAdaptersMixin, ModelAdaptersMixin
 
 class BartEncoderLayerAdaptersMixin:
     """Adds adapters to the BartEncoderLayer module of BART."""
-
     def __init__(self,args=None):
         self.args = args
 

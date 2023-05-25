@@ -47,10 +47,6 @@ from torch.utils.data import DataLoader
 from datasets import Dataset, DatasetDict, concatenate_datasets
 
 
-# update the version? make everything latest and easy to use, please
-# this will be a new framework during my PhD.
-
-
 logger = logging.getLogger(__name__)
 MODEL_CONFIG_CLASSES = list(MODEL_MAPPING.keys())
 MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)

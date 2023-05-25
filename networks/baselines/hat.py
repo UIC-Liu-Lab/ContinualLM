@@ -5,22 +5,22 @@ from tqdm.auto import tqdm
 import torch
 import torch.distributed as dist
 import os
-from utils import utils
+import utils
 import numpy as np
 
 
 
 
-def compute(model,accelerator,mask_pre,mask,args):
-    mask_pre_path = os.path.join(args.output_dir, 'mask_pre') # we don't want mask_pre to be overlapping with others, imagine if you stop and rerun some
-    mask_back_path = os.path.join(args.output_dir, 'mask_back')
+def compute(model,accelerator,mask_pre,mask,get_view_for,args):
+    mask_pre_path = os.path.join(args.output_dir + '../', 'mask_pre') # we don't want mask_pre to be overlapping with others, imagine if you stop and rerun some
+    mask_back_path = os.path.join(args.output_dir + '../', 'mask_back')
     model_ori = accelerator.unwrap_model(model)
     config = model_ori.config
 
 
     for key, value in mask.items():
         mask[key] = torch.autograd.Variable(value.data.clone(), requires_grad=False)
-    if args.ft_task == 0:
+    if args.task == 0:
         mask_pre = mask
     else:
         for key, value in mask_pre.items():
@@ -29,7 +29,7 @@ def compute(model,accelerator,mask_pre,mask,args):
     # Weights mask
     mask_back = {}
     for n, p in model.named_parameters():
-        vals = utils.model.get_view_for(n, p, mask_pre,config, args)
+        vals = get_view_for(n, p, mask_pre,config, args)
         if vals is not None:
             mask_back[n] = 1 - vals
 

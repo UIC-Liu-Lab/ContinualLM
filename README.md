@@ -148,7 +148,7 @@ We highly appreciate your act of staring and citing. Your attention to detail an
 ```bibtex  
   
 @inproceedings{ke2022dgs,  
- title={Continual Learning of Language Models}, author={Ke, Zixuan and Shao, Yijia and Lin, Haowei and Xu, Hu and Shu, Lei, and Liu, Bing}, booktitle={International Conference on Learning Representations (ICLR)}, year={2023}}  
+ title={Continual Learning of Language Models}, author={Ke, Zixuan and Shao, Yijia and Lin, Haowei and Konishi, Tatsuya and Kim, Gyuhak and Liu, Bing}, booktitle={International Conference on Learning Representations (ICLR)}, year={2023}}  
   
 @inproceedings{ke2022dga,  
  title={Adapting a Language Model While Preserving its General Knowledge}, author={Ke, Zixuan and Shao, Yijia and Lin, Haowei and Xu, Hu and Shu, Lei, and Liu, Bing}, booktitle={Empirical Methods in Natural Language Processing (EMNLP)}, year={2022}}  
