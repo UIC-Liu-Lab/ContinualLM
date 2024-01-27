@@ -13,12 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
-Fine-tuning the library models for masked language modeling (BERT, ALBERT, RoBERTa...)
-on a text file or a dataset without using HuggingFace Trainer.
-Here is the full list of checkpoints on the hub that can be fine-tuned by this script:
-https://huggingface.co/models?filter=masked-lm
-"""
 
 import utils
 import logging
@@ -107,8 +101,6 @@ def main():
     model = utils.model.lookfor_model_posttrain(args)
     accelerator.wait_for_everyone()
 
-    #we need to add "comb" as MTL
-    # ---------------------
     if 'comb' in args.baseline:
         for t in range(args.pt_task + 1):
             if t == 0:
@@ -125,7 +117,6 @@ def main():
             # Downloading and loading a dataset from the hub.
             raw_datasets = get_dataset(args.dataset_name, tokenizer=None, args=args)
 
-    # ---------------------
 
     # See more about loading any type of standard or custom dataset (from files, python dict, pandas DataFrame, etc) at
     # https://huggingface.co/docs/datasets/loading_datasets.html.

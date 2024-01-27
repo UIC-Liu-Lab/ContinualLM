@@ -816,7 +816,6 @@ class MyRobertaForMaskedLM(ModelWithHeadsAdaptersMixin, RobertaPreTrainedModel):
         mask="<mask>",
     )
 
-    #TODO: we need more mask here
     def forward(
         self,
         input_ids=None,

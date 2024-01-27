@@ -9,10 +9,15 @@
         <figcaption>Imagine an LM that not only effortlessly acquires new knowledge but also retains its mastery of skills, all while successfully transferring knowledge. Is it even possible?</figcaption>  
     <br>    
 <p>
-  
+
+## News    
+🔥 We have added ``continual_pretrain.ipynb`` as a **self-contained example** of the soft-masking scenario. It runs well without GPUs!  
+🔥 Wondering whether you can adapt a **black-box LLM** without worrying about the update of its parameters? Check out our latest paper on retrieval-augmented generation (RAG) [here](https://arxiv.org/abs/2401.06954)!
+
 ## Quick Links  
   
  - [Introduction ](#Introduction)  
+ - [Simple Example](#Simple One-file Notebook Example)
  - [Dataset](#dataset)  
  - [Architecture](#architecture)  
  - [Installation](#installation)  
@@ -21,9 +26,9 @@
  - [Checkpoints in Huggingface](#checkpoints-in-huggingface)  
  - [Reference](#reference)  
  - [Contact](#contact)  
-  
+ 
 ## Introduction    
- In 2021, we introduced  [Pycontinual](https://github.com/ZixuanKe/PyContinual), a straightforward and flexible framework for continual learning. Our research has benefited significantly from this framework. Today, we are excited to announce the launch of **ContinualLM**, an extensible continual learning framework focused on language models (LMs), designed to sustain the benefits of continual learning (CL) in this field.    
+ In 2021, we introduced  [Pycontinual](https://github.com/ZixuanKe/PyContinual), a straightforward and flexible framework for continual learning. Our research has benefited significantly from this framework. Today, we are excited to share the **ContinualLM**, an extensible continual learning framework focused on language models (LMs), designed to sustain the benefits of continual learning (CL) in this field.    
     
 Continual learning for LMs is distinct from traditional CL because     
  - Each task is treated as a **domain-specific corpus** (at present, our primary focus is on domain-adaptive pre-training, which is also known as pre-finetuning or post-training).  
@@ -53,6 +58,8 @@ Our repository includes a PyTorch implementation of a collection of state-of-the
   * **Prompt-ONE**:  Adds prompt to Transformer for each domain  
   * **KD**: Naive knoweldge Distillation  
 
+## Simple One-file Notebook Example  
+We have added ``continual_pretrain.ipynb`` as a self-contained example of the soft-masking scenario. It runs well without GPUs!
 
 ## Dataset  
   

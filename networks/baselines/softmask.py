@@ -23,8 +23,6 @@ import torch.autograd as autograd
 from os import path
 
 
-# TODO: if softmask is needed , we use this file
-
 def gather_by_mean(head_impt):
     head_impt_list = [torch.zeros_like(head_impt) for _ in range(dist.get_world_size())]
     dist.all_gather(tensor_list=head_impt_list,

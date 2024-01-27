@@ -50,8 +50,6 @@ class Appr(object):
         else:
             self.args.epoch = math.ceil(self.args.max_train_steps / num_update_steps_per_epoch)
 
-        # TODO: Warm up can be important
-
         lr_scheduler = get_scheduler(
             name=self.args.lr_scheduler_type,
             optimizer=optimizer,

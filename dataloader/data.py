@@ -166,7 +166,7 @@ def get_dataset(dataset_name,tokenizer,args):
                 return 1
             elif label == 'negative':
                 return 2
-            else:  # TODO: remove contradictive
+            else:  # remove contradictive
                 print('ignore: ' + label)
 
         new_data = {}
