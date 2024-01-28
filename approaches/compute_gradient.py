@@ -15,8 +15,6 @@ from networks.baselines import ewc, hat, softmask, memory
 
 def compute(self,model,head_impt, intermediate_impt, output_impt,batch, loss,buffer,mask_back,outputs,epoch,step,accelerator):
 
-    # add loss ------------
-
     if 'derpp' in self.args.baseline \
             and not (buffer is None or buffer.is_empty()) \
             and step % self.args.replay_freq == 0:
@@ -30,35 +28,31 @@ def compute(self,model,head_impt, intermediate_impt, output_impt,batch, loss,buf
         
 
     if 'dga' in self.args.baseline or 'das' in self.args.baseline:
-        contrast_loss = outputs.contrast_loss  # loss 1
+        contrast_loss = outputs.contrast_loss
         loss = loss + contrast_loss
     if 'distill' in self.args.baseline:
-        distill_loss = outputs.distill_loss  # loss 1
+        distill_loss = outputs.distill_loss
         loss = loss + distill_loss
     if 'simcse' in self.args.baseline:
-        simcse_loss = outputs.simcse_loss  # loss 1
+        simcse_loss = outputs.simcse_loss
         loss = loss + simcse_loss
     if 'tacl' in self.args.baseline:
-        tacl_loss = outputs.tacl_loss  # loss 1
+        tacl_loss = outputs.tacl_loss
         loss = loss + tacl_loss
     if 'taco' in self.args.baseline:
-        taco_loss = outputs.taco_loss  # loss 1
+        taco_loss = outputs.taco_loss
         loss = loss + taco_loss
     if 'infoword' in self.args.baseline:
-        infoword_loss = outputs.infoword_loss  # loss 1
+        infoword_loss = outputs.infoword_loss
         loss = loss + infoword_loss
-    # add loss ------------
 
     loss = loss / self.args.gradient_accumulation_steps
-    # add model needs to be careful! make sure it is in parameters and please double check its gradient
-    accelerator.backward(loss)  # sync
+    accelerator.backward(loss)
 
     if accelerator.is_main_process and epoch < 1 and step < 1:
         for n, p in accelerator.unwrap_model(model).named_parameters():
             if p.grad is not None:
-                print('n,p： ', n, p.size())
-
-    # modify the gradient ------------
+                print(f'Gradient of param "{n}" with size {tuple(p.size())} detected')
 
     if self.args.pt_task > 0 and \
             ('adapter_hat' in self.args.baseline
@@ -85,7 +79,5 @@ def compute(self,model,head_impt, intermediate_impt, output_impt,batch, loss,buf
     if 'dga' in self.args.baseline or 'das' in self.args.baseline:
         softmask.soft_mask_gradient(model, head_impt, intermediate_impt, output_impt, accelerator, epoch, step,
                                     self.args)
-
-    # modify the gradient ------------
 
     return model

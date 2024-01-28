@@ -233,48 +233,42 @@ def prepare_sequence_posttrain(args):
         args.softmask_compute = 'before_distill_after_mlm'
         args.layer_to_mask = 'head_mask_intermediate_mask_output_mask'
 
-
-    with open('./sequences/' + args.sequence_file, 'r') as f:
+    sequence_path = f'./sequences/{args.sequence_file}'
+    with open(sequence_path, 'r') as f:
         datas = f.readlines()[args.idrandom]
         data = datas.split()
 
+    output = f'{args.base_dir}/seq{args.idrandom}/{args.max_samples}samples/{args.baseline}/{data[args.pt_task]}_roberta/'
+    ckpt = f'{args.base_dir}/seq{args.idrandom}/{args.max_samples}samples/{args.baseline}/{data[args.pt_task-1]}_roberta/'
 
-    # print('data: ',data)
-    output = args.base_dir+"/seq"+str(args.idrandom)+"/"+str(args.max_samples) + "samples/"+str(args.baseline)+'/'+str(data[args.pt_task])+"_roberta/"
-    ckpt = args.base_dir+"/seq"+str(args.idrandom)+"/"+str(args.max_samples) + "samples/"+str(args.baseline)+'/'+str(data[args.pt_task-1])+"_roberta/"
-
-
-    if 'dga' in args.baseline or 'das' in args.baseline: #TODO: add some condition for better testing
-        # os.makedirs(output + 'distill/', exist_ok=True)
-        # os.makedirs(output + 'contrast/', exist_ok=True)
-
-        output_dir = args.base_dir + "/seq" + str(args.idrandom) + "/"+str(args.max_samples) + "samples/"+str(args.baseline)
+    if 'dga' in args.baseline or 'das' in args.baseline:
+        output_dir = f'{args.base_dir}/seq{args.idrandom}/{args.max_samples}samples/{args.baseline}'
         args.saved_output_dir = []
-        # args.saved_output_dir = [output_dir +'/'+str(data[t])+"_roberta/distill/" for t in range(args.pt_task+1)] # my base need to be read
-        # args.saved_output_dir += [output_dir+'/'+str(data[t])+"_roberta/contrast/" for t in range(args.pt_task)]
 
         if args.softmask_compute is not None:
             if 'before_distill' in args.softmask_compute and 'one' not in args.baseline:
                 for pre_t in range(args.pt_task + 1):
-                    os.makedirs(output + 'before_distill' + str(pre_t) + '/', exist_ok=True)
-                args.saved_output_dir += [output_dir + '/' + str(data[0]) + "_roberta/before_distill" + str(0) + '/' ] # only use the first one
+                    new_dir = f'{output}before_distill{pre_t}/'
+                    os.makedirs(new_dir, exist_ok=True)
+                saved_output = f'{output_dir}/{data[0]}_roberta/before_distill0/'
+                args.saved_output_dir += [saved_output] # only used in the first one (for the importance of general knoweledge)
 
             if 'before_distill' in args.softmask_compute and 'one' in args.baseline:
                 for pre_t in range(args.pt_task + 1):
-                    os.makedirs(output + 'before_distill' + str(pre_t) + '/', exist_ok=True)
-                args.saved_output_dir += [output_dir + '/' + str(data[args.pt_task]) + "_roberta/before_distill" + str(args.pt_task) + '/' ]
-
+                    new_dir = f'{output}before_distill{pre_t}/'
+                    os.makedirs(new_dir, exist_ok=True)
+                saved_output = f'{output_dir}/{data[args.pt_task]}_roberta/before_distill{args.pt_task}/'
+                args.saved_output_dir += [saved_output]
 
             if 'after_mlm' in args.softmask_compute:
-                os.makedirs(output + 'after_mlm'+ str(pre_t) + '/', exist_ok=True)
-                args.saved_output_dir += [output_dir+'/'+str(data[t])+"_roberta/after_mlm" + str(args.pt_task) + '/'  for t in range(1,args.pt_task)]
+                new_dir = f'{output}after_mlm{pre_t}/'
+                os.makedirs(new_dir, exist_ok=True)
+                args.saved_output_dir += [f'{output_dir}/{data[t]}_roberta/after_mlm{t}/' for t in range(args.pt_task)]
 
     else:
-        args.saved_output_dir = [args.base_dir + "/seq" + str(args.idrandom) + "/seed" + str(args.seed) + "/" + str(
-            args.baseline) + '/' + str(args.dataset_name) + '/' + str(data[t]) + "_roberta/" for t in
-                                 range(args.pt_task + 1)]
+        args.saved_output_dir = [f'{args.base_dir}/seq{args.idrandom}/{args.max_samples}samples/{args.baseline}/{args.dataset_name}/{data[t]}_roberta/' for t in range(args.pt_task + 1)]
 
-    print('saved_output_dir: ',args.saved_output_dir)
+    print(f'The directory of saved models or saved importances: {args.saved_output_dir}')
 
 
     args.output_dir = output
@@ -294,14 +288,14 @@ def prepare_sequence_posttrain(args):
     else:
         args.model_name_or_path = ckpt
 
-    if args.eval_only: # no pre-trained for the first
-        args.model_name_or_path = args.base_dir+"/seq"+str(args.idrandom)+"/"+str(args.max_samples) + "samples/"+str(args.baseline)+'/'+str(data[args.pt_task])+"_roberta/"
-        # args.model_name_or_path = "roberta-base"
+    if args.eval_only:
+        args.model_name_or_path = f'{args.base_dir}/seq{args.idrandom}/{args.max_samples}samples/{args.baseline}/{data[args.pt_task]}_roberta/'
 
 
-    print('output_dir: ',args.output_dir)
-    print('args.dataset_name: ',args.dataset_name)
-    print('args.model_name_or_path: ',args.model_name_or_path)
+    print(f'Output directory: {args.output_dir}')
+    print(f'Dataset: {args.dataset_name}')
+    print(f'Pretrained model: {args.model_name_or_path}')
+
 
     if 'ewc' in args.baseline:
         args.lamb = 5000  # Grid search = [500,1000,2000,5000,10000,20000,50000]; best was 5000 for ewc
@@ -310,7 +304,7 @@ def prepare_sequence_posttrain(args):
             or 'adapter_bcl' in args.baseline \
             or 'adapter_classic' in args.baseline:
         args.lamb=0.75
-    args.class_num = 1 # placeholder
+    args.class_num = 1 # placeholder for pre-training
     return args
 
 
@@ -325,29 +319,28 @@ def prepare_sequence_finetune(args):
     elif 'das' in args.baseline:
         args.softmask_compute = 'before_distill_after_mlm'
 
-
-    with open('./sequences/' + args.sequence_file, 'r') as f:
+    sequence_path = f'./sequences/{args.sequence_file}'
+    with open(sequence_path, 'r') as f:
         datas = f.readlines()[args.idrandom]
         data = datas.split()
 
     posttrain2endtask = {"pubmed_unsup":"chemprot_sup", "phone_unsup":"phone_sup", "ai_unsup":"scierc_sup", "camera_unsup":"camera_sup", "acl_unsup":"aclarc_sup", "restaurant_unsup":"restaurant_sup"}
 
 
-    output = args.base_dir+"/seq"+str(args.idrandom)+"/"+str(args.max_samples) + "samples/"+str(args.baseline)+'/'+str(data[args.pt_task])+"_roberta/"
-    ckpt = args.base_dir+"/seq"+str(args.idrandom)+"/"+str(args.max_samples) + "samples/"+str(args.baseline)+'/'+str(data[args.pt_task])+"_roberta/"
-
+    output = f'{args.base_dir}/seq{args.idrandom}/{args.max_samples}samples/{args.baseline}/{data[args.pt_task]}_roberta/'
+    ckpt = f'{args.base_dir}/seq{args.idrandom}/{args.max_samples}samples/{args.baseline}/{data[args.pt_task]}_roberta/'
 
     args.output_dir = output
-    args.saved_output_dir = [args.base_dir+"/seq"+str(args.idrandom)+"/"+str(args.max_samples) + "samples/"+str(args.baseline)+'/'+str(data[t])+"_roberta/"for t in range(args.pt_task+1)]
+
     args.dataset_name = posttrain2endtask[data[args.ft_task]]
     args.model_name_or_path = ckpt
 
     args.task = args.ft_task
 
 
-    print('output_dir: ',args.output_dir)
-    print('args.dataset_name: ',args.dataset_name)
-    print('args.model_name_or_path: ',args.model_name_or_path)
+    print(f'Output directory: {args.output_dir}')
+    print(f'Dataset: {args.dataset_name}')
+    print(f'Pretrained model: {args.model_name_or_path}')
 
     if args.dataset_name in ['aclarc_sup']:
         args.epoch = 10
@@ -468,8 +461,8 @@ def _lookfor_model_others(args,training_type):
     return model
 
 
-def lookfor_model_posttrain(args): # TODO: baselines should apply in postttraining phase
-    if args.model_name_or_path:  # only do electra
+def lookfor_model_posttrain(args):
+    if args.model_name_or_path:
         if 'adapter' in args.baseline:
             model = _lookfor_model_adapter(args, 'posttrain')
             return model
@@ -604,12 +597,10 @@ class Self_Attn(nn.Module):
         proj_query  = self.query_conv(x).view(m_batchsize,width,height).permute(0,2,1) # B X CX(N)
         proj_key =  self.key_conv(x).view(m_batchsize,width,height) # B X C x (*W*H)
         energy =  torch.bmm(proj_query,proj_key) # transpose check
-        # print('energy: ',energy.size())
 
         attention = self.softmax(energy) # BX (N) X (N)
 
         # attention =  F.gumbel_softmax(energy,hard=True,dim=-1)
-        # print('attention: ',attention)
         proj_value = self.value_conv(x).view(m_batchsize,width,height) # B X C X N
 
         out = torch.bmm(proj_value,attention.permute(0,2,1) )

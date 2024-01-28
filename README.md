@@ -10,14 +10,16 @@
     <br>    
 <p>
 
-## News    
-🔥 We have added ``continual_pretrain.ipynb`` as a **self-contained example** of the soft-masking scenario. It runs well without GPUs!  
+## News  
+🔥 We have added [checkpoints](#checkpoints-in-huggingface) in Hugging Face for easier reproduction!  
+🔥 We have added [continual_pretrain.ipynb](https://github.com/UIC-Liu-Lab/ContinualLM/blob/main/continual_pretrain.ipynb) as a **self-contained example** of the soft-masking scenario. It runs well without GPUs!  
+🔥 Soft-masking can also work in **conventional continual fine-tuning**. Check out our latest [EMNLP23](https://arxiv.org/abs/2310.09436) paper!  
 🔥 Wondering whether you can adapt a **black-box LLM** without worrying about the update of its parameters? Check out our latest paper on retrieval-augmented generation (RAG) [here](https://arxiv.org/abs/2401.06954)!
 
 ## Quick Links  
   
- - [Introduction ](#Introduction)  
- - [Simple Example](#Simple One-file Notebook Example)
+ - [Introduction](#introduction)  
+ - [Simple Example](#simple-example)
  - [Dataset](#dataset)  
  - [Architecture](#architecture)  
  - [Installation](#installation)  
@@ -58,7 +60,7 @@ Our repository includes a PyTorch implementation of a collection of state-of-the
   * **Prompt-ONE**:  Adds prompt to Transformer for each domain  
   * **KD**: Naive knoweldge Distillation  
 
-## Simple One-file Notebook Example  
+## Simple Example
 We have added ``continual_pretrain.ipynb`` as a self-contained example of the soft-masking scenario. It runs well without GPUs!
 
 ## Dataset  
@@ -144,9 +146,36 @@ done
   
 ## Checkpoints in Huggingface  
 
-[comment]: <> (For those who are interested solely in the resulting model or want to continue per-training the model with their own data, we have good news! We offer checkpoints through Hugging Face:  )
-  
-**[TODO]**  
+For those who are interested solely in the resulting model or want to continue per-training the model with their own data, we have good news! We offer checkpoints through Hugging Face.
+
+You can easily import our continually post-trained model with HuggingFace's `transformers`!
+
+```python
+import torch
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+
+# Import our model. The package will take care of downloading the models automatically
+tokenizer = AutoTokenizer.from_pretrained("UIC-Liu-Lab/DAS-Rest2Cam")
+model = AutoModelForSequenceClassification.from_pretrained("UIC-Liu-Lab/DAS-Rest2Cam", trust_remote_code=True)
+
+# Tokenize input texts
+texts = [
+    "There's a kid on a skateboard.",
+    "A kid is skateboarding.",
+    "A kid is inside the house."
+]
+inputs = tokenizer(texts, padding=True, truncation=True, return_tensors="pt")
+
+# Get the model output!
+res = model(**inputs)
+
+```
+
+If you encounter any problem when directly loading the models by HuggingFace's API, you can also download the models manually from the [repo](https://huggingface.co/UIC-Liu-Lab/DAS-Rest2Cam/tree/main) and use `model = AutoModel.from_pretrained({PATH TO THE DOWNLOAD MODEL})`.
+
+⚠ The continual pre-training sequence is the **first sequence** at ``./sequences/posttrain`` (from **Restaurant to Camera**), you can use the downloaded weights to fine-tune the corresponding end-task.
+
+⚠ If you are interested in the importance files, please refer to ``before_distill0`` and ``after_mlm{domain_id}``. ``before`` signifies the importance computed before pre-training, which is done only once before the first domain for general pre-trained knowledge. ``after`` indicates the importance computed after the pre-training of domain_id.
   
 ## Reference  
 We highly appreciate your act of staring and citing. Your attention to detail and recognition is greatly valued.  

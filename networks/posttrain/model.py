@@ -1,6 +1,3 @@
-"""
-    Modified RobertaForSequenceClassification, RobertaForMaskedLM to accept **kwargs in forward.
-"""
 import pdb
 import torch
 import torch.nn as nn
@@ -15,7 +12,6 @@ class MyModel(nn.Module):
 
     def __init__(self, model,teacher=None,args=None):
         super().__init__()
-        #please make sure there is no chanable layers in this class, other than "model"
         self.model = model
         self.teacher = teacher
         self.config = model.config
@@ -54,9 +50,7 @@ class MyModel(nn.Module):
         infoword_loss = None
         hidden_states = None
 
-        if prune_loss is not None and 'distill' in prune_loss: # detect impt for roberta
-            #  use original ids
-
+        if prune_loss is not None and 'distill' in prune_loss: # detect importance with KL as L_impt
             outputs = self.model(input_ids=input_ids, labels=labels, attention_mask=attention_mask,
                                      head_mask=head_mask,
                                      output_mask=output_mask,
@@ -69,15 +63,15 @@ class MyModel(nn.Module):
                                            output_hidden_states=True, output_attentions=True)
 
 
-            loss = self.kd_loss(teacher_outputs.hidden_states[-1], outputs.hidden_states[-1])  # no need for mean
+            loss = self.kd_loss(teacher_outputs.hidden_states[-1], outputs.hidden_states[-1])
 
-        elif prune_loss is not None and 'mlm' in prune_loss:
+        elif prune_loss is not None and 'mlm' in prune_loss: # detect importance with MLM as L_impt
             outputs = self.model(input_ids=inputs_ori_ids, labels=labels, attention_mask=attention_mask,
                                      head_mask=head_mask,
                                      output_mask=output_mask,
                                      intermediate_mask=intermediate_mask,
                                      output_hidden_states=True, output_attentions=True)
-            loss = outputs.loss  # no need for mean
+            loss = outputs.loss
 
 
         else:
@@ -98,8 +92,7 @@ class MyModel(nn.Module):
                     teacher_ori = self.teacher(input_ids=inputs_ori_ids, labels=labels, attention_mask=attention_mask,
                                                output_hidden_states=True)
 
-                    distill_loss = self.kd_loss(teacher_ori.hidden_states[-1], student_ori.hidden_states[
-                        -1])  # no need for mean. The simplist way to do distillation
+                    distill_loss = self.kd_loss(teacher_ori.hidden_states[-1], student_ori.hidden_states[-1])
 
                 outputs = self.model(input_ids=input_ids, labels=labels, attention_mask=attention_mask,
                                      output_hidden_states=True)
@@ -181,8 +174,7 @@ class MyModel(nn.Module):
                     mix_pooled_reps.append(pooled_output.unsqueeze(1).clone())
                     cur_mix_outputs = torch.cat(mix_pooled_reps, dim=1)
 
-                    loss += self.contrast(cur_mix_outputs,
-                                          con_type='unsupervised')  # train attention and contrastive learning at the same time
+                    loss += self.contrast(cur_mix_outputs,con_type='unsupervised')  # train attention and contrastive learning at the same time
 
 
             elif 'simcse' in self.args.baseline:
@@ -230,8 +222,6 @@ class MyModel(nn.Module):
                 contrast_loss = simcse.sequence_level_contrast(mean_z1, mean_z2, mean_z3)
 
             elif 'tacl' in self.args.baseline and not prune_loss:
-                # TODO: we need a teacher for TACL
-
                 outputs_ori = self.model(input_ids=inputs_ori_ids, labels=labels, attention_mask=attention_mask,
                                          output_hidden_states=True)
                 outputs_teacher = self.teacher(input_ids=inputs_ori_ids, labels=labels, attention_mask=attention_mask,
@@ -243,8 +233,6 @@ class MyModel(nn.Module):
                                             eps=0.0)  # contrasive_labels: bsz x seqlen; masked positions with 0., otherwise 1.
 
             elif 'taco' in self.args.baseline and not prune_loss:
-                # TODO: not done, need check
-
                 outputs_ori = self.model(input_ids=inputs_ori_ids, labels=labels, attention_mask=attention_mask,
                                          output_hidden_states=True)
 
@@ -275,8 +263,6 @@ class MyModel(nn.Module):
                 outputs_mask = self.model(input_ids=input_ids, labels=labels, attention_mask=attention_mask,
                                           output_hidden_states=True)
 
-                # TODO: bad choice
-                # print(labels != -100)
                 ngram_z1 = outputs_ori.hidden_states[-1]
                 # z1 = ngram_z1[new_ids]# trick to index a 3D tensor using 2D tensor https://stackoverflow.com/questions/55628014/indexing-a-3d-tensor-using-a-2d-tensor
                 # z1 = z1.view(ngram_z1.size(0),-1,ngram_z1.size(-1)) # cannot do this, becuase each sequence has a different span
@@ -293,9 +279,6 @@ class MyModel(nn.Module):
                 z2 = outputs_mask.hidden_states[-1]
                 mean_z2 = torch.mean(z2, dim=1)
 
-                # print('mean_z1: ',mean_z1.size())
-                # print('mean_z2: ',mean_z2.size())
-
                 infoword_loss = simcse.sequence_level_contrast(mean_z1, mean_z2)
 
         return MyRobertaOutput(
@@ -309,8 +292,6 @@ class MyModel(nn.Module):
             hidden_states=hidden_states,
 
         )
-
-
 
 
 class MyRobertaOutput(ModelOutput):

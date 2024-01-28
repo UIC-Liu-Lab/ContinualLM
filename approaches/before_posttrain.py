@@ -19,7 +19,6 @@ from utils import utils
 from networks.baselines import ewc, hat, softmask, memory, demix
 
 
-        # before training ***********************************************************************************************
 def prepare(self,model, train_loader_subset, train_loader_subset_dataset, accelerator):
     self_fisher = None
     mask_pre = None
@@ -32,7 +31,7 @@ def prepare(self,model, train_loader_subset, train_loader_subset_dataset, accele
 
     if 'ewc' in self.args.baseline:
         if os.path.exists(os.path.join(self.args.output_dir + '../', 'fisher')):
-            print('load fisher matrix **************')
+            print('Load fisher matrix **************')
             self_fisher = torch.load(os.path.join(self.args.output_dir + '../', 'fisher'))
             for k, v in self_fisher.items():
                 self_fisher[k] = self_fisher[k].cuda()
@@ -42,7 +41,7 @@ def prepare(self,model, train_loader_subset, train_loader_subset_dataset, accele
             or 'adapter_bcl' in self.args.baseline \
             or 'adapter_classic' in self.args.baseline:  # BCL included HAT
         if os.path.exists(os.path.join(self.args.output_dir + '../', 'mask_pre')):
-            print('load mask matrix **************')
+            print('Load mask matrix **************')
             mask_pre = torch.load(os.path.join(self.args.output_dir + '../', 'mask_pre'))
             mask_back = torch.load(os.path.join(self.args.output_dir + '../', 'mask_back'))
 
@@ -57,14 +56,14 @@ def prepare(self,model, train_loader_subset, train_loader_subset_dataset, accele
         if self.args.pt_task > 0:
             buffer.load(os.path.join(self.args.output_dir + '../', 'buffer'))
 
-    elif self.args.pt_task > 0 and 'adapter_demix' in self.args.baseline:  # initialize the new adapter using the nearest adapter
+    elif self.args.pt_task > 0 and 'adapter_demix' in self.args.baseline:  # Initialize the new adapter using the nearest adapter
         model = demix.compute(train_loader_subset, train_loader_subset_dataset, model, accelerator,self.args)
 
     if 'dga' in self.args.baseline or 'das' in self.args.baseline:
         train_loader_prune = accelerator.prepare(train_loader_subset)
         config = accelerator.unwrap_model(model).model.config
 
-        if 'before_distill' in self.args.softmask_compute and (self.args.pt_task == 0 or 'dga' in self.args.baseline): # one and dga are the same
+        if 'before_distill' in self.args.softmask_compute and (self.args.pt_task == 0 or 'dga' in self.args.baseline): # One and dga are the same
 
             config = accelerator.unwrap_model(model).model.config
             softmask.compute_impt(args=self.args, config=config, model=model,
@@ -79,19 +78,19 @@ def prepare(self,model, train_loader_subset, train_loader_subset_dataset, accele
                                                  prune_loss='before_mlm')
 
         accelerator.wait_for_everyone()
-        head_impt_, intermediate_impt_, output_impt_ = softmask.accumulate_impt(self.args)
+        head_impt_accumlate, intermediate_impt_accumlate, output_impt_accumlate = softmask.accumulate_impt(self.args)
 
         if accelerator.is_main_process:
-            print('head_impt: ', head_impt)
-            print('intermediate_impt: ', intermediate_impt)
-            print('output_impt: ', output_impt)
+            print(f'Accumulated head layer importance: {head_impt_accumlate}')
+            print(f'Accumulated intermediate layer importance: {intermediate_impt_accumlate}')
+            print(f'Accumulated output layer importance: {output_impt_accumlate}')
 
         if 'head_mask' in self.args.layer_to_mask:
-            head_impt = head_impt_
+            head_impt = head_impt_accumlate
         if 'intermediate_mask' in self.args.layer_to_mask:
-            intermediate_impt = intermediate_impt_
+            intermediate_impt = intermediate_impt_accumlate
         if 'output_mask' in self.args.layer_to_mask:
-            output_impt = output_impt_
+            output_impt = output_impt_accumlate
 
     return self,model,head_impt, intermediate_impt, output_impt,self_fisher,mask_pre,mask_back,buffer
 

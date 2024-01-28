@@ -13,12 +13,10 @@ MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
 import utils
 from copy import deepcopy
 
-        # before training ***********************************************************************************************
 def compute(self,model,batch,head_impt,intermediate_impt,output_impt,self_fisher,mask_pre,train_loader,step,accelerator):
 
-    self.args.s = (self.args.smax - 1 / self.args.smax) * step / len(train_loader) + 1 / self.args.smax # for HAT based model
+    self.args.s = (self.args.smax - 1 / self.args.smax) * step / len(train_loader) + 1 / self.args.smax # Only for HAT based model
 
-    # learns outputs ------------
     if 'ewc' in self.args.baseline:
         outputs = model(batch, self_fisher=self_fisher)
     elif 'adapter_hat' in self.args.baseline \

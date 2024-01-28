@@ -18,15 +18,12 @@ MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
 from networks.baselines import ewc, hat, softmask, memory
 
 
-
-                # after training ***********************************************************************************************
-
 def compute(self,model, train_loader_subset, self_fisher,mask_pre, buffer,accelerator):
 
     accelerator.wait_for_everyone()
     config = accelerator.unwrap_model(model).model.config
 
-    if accelerator.is_main_process:  # onlyh discriminator is saved. I don't need anything about geenrator
+    if accelerator.is_main_process:
         unwrapped_model = accelerator.unwrap_model(model)
         unwrapped_model.model.save_pretrained(self.args.output_dir)
         self.args.tokenizer.save_pretrained(self.args.output_dir)
@@ -46,8 +43,8 @@ def compute(self,model, train_loader_subset, self_fisher,mask_pre, buffer,accele
         mask = self.mask(model,accelerator,self.args)
         hat.compute(model, accelerator, mask_pre, mask, self.get_view_for, self.args)
     elif 'derpp' in self.args.baseline:
-        # add data to the buffer
-        if accelerator.is_main_process: # only find some to keep, no training
+        # Add data to the buffer
+        if accelerator.is_main_process:
             buffer.add_from_loader(model, train_loader_subset)
             buffer_path = os.path.join(self.args.output_dir + '../', 'buffer')
             buffer.save(buffer_path)
@@ -61,6 +58,4 @@ def compute(self,model, train_loader_subset, self_fisher,mask_pre, buffer,accele
                                            prune_loss='after_mlm')
 
     return self
-        # after training ***********************************************************************************************
-
 

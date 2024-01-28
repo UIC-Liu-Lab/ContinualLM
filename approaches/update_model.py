@@ -20,8 +20,6 @@ def update(self,model,optimizer,outputs,loss,writer,lr_scheduler,progress_bar,gl
     progress_bar.update(1)
     completed_steps += 1
 
-    # modify the parameteres ------------
-
     if 'adapter_hat' in self.args.baseline \
             or 'transformer_hat' in self.args.baseline \
             or 'adapter_bcl' in self.args.baseline \
@@ -30,14 +28,10 @@ def update(self,model,optimizer,outputs,loss,writer,lr_scheduler,progress_bar,gl
         for n, p in model.named_parameters():
             if 'adapters.e' in n or 'model.e' in n:
                 p.data = torch.clamp(p.data, -self.args.thres_emb, self.args.thres_emb)
-
-    # modify the parameteres ------------
-
     progress_bar.set_description(
         'Train Iter (loss=%5.3f)' % loss.item())  # show the loss, mean while
 
-    # set up logging ------------
-
+    # Set up logging ------------
     if accelerator.is_main_process:
         utils.model.log_loss(writer, scalar_value=loss.item(), global_step=global_step)
         utils.model.log_loss(writer, loss_name=' MLM loss', scalar_value=outputs.loss.item(),
@@ -62,7 +56,4 @@ def update(self,model,optimizer,outputs,loss,writer,lr_scheduler,progress_bar,gl
             utils.log_loss(writer, loss_name=' infoward loss',
                            scalar_value=outputs.infoword_loss.item(),
                            global_step=global_step)
-
-    # set up logging ------------
-
     return

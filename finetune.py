@@ -91,12 +91,11 @@ def main():
 
     logger.info('==> Preparing data..')
 
-    datasets = get_adtaset(args.dataset_name, tokenizer=tokenizer,args=args)
-    print('dataset_name: ',args.dataset_name)
+    datasets = get_dataset(args.dataset_name, tokenizer=tokenizer,args=args)
+    print(f'Dataset: {args.dataset_name}')
 
-    print('train_loader: ',len(datasets['train']))
-    print('test_loader: ',len(datasets['test']))
-
+    print(f'Size of training set: {len(datasets["train"])}')
+    print(f'Size of testing set: {len(datasets["test"])}')
 
     train_dataset = datasets['train']
     test_dataset = datasets['test']

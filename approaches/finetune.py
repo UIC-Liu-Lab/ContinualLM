@@ -36,7 +36,7 @@ class Appr(object):
         return
 
 
-    # TODO: for now, it only supports single GPU
+    # TODO: Multiple-GPU supprt
 
     def train(self,model,accelerator,train_loader, test_loader):
 
@@ -60,12 +60,11 @@ class Appr(object):
         # Prepare everything with the accelerator
         model, optimizer, train_loader, test_loader = accelerator.prepare(model, optimizer, train_loader, test_loader)
 
-        # Train!
         logger.info("***** Running training *****")
         logger.info( f"Pretrained Model = {self.args.model_name_or_path},  Dataset name = {self.args.dataset_name}, seed = {self.args.seed}")
 
-        summary_path = os.path.join(self.args.output_dir , '../'+ str(self.args.dataset_name) + '_finetune_summary')
-        print('summary_path: ', summary_path)
+        summary_path = f'{self.args.output_dir}../{self.args.dataset_name}_finetune_summary'
+        print(f'summary_path: {summary_path}')
 
         for epoch in range(self.args.epoch):
             print("Epoch {} started".format(epoch))
@@ -83,10 +82,12 @@ class Appr(object):
                                                                                     acc, self.args.seed))
 
         if accelerator.is_main_process:
-            progressive_f1_path = os.path.join(self.args.output_dir + '/../', 'progressive_f1_' + str(self.args.seed))
-            progressive_acc_path = os.path.join(self.args.output_dir + '/../', 'progressive_acc_' + str(self.args.seed))
-            print('progressive_f1_path: ', progressive_f1_path)
-            print('progressive_acc_path: ', progressive_acc_path)
+
+            progressive_f1_path = f'{self.args.output_dir}/../progressive_f1_{self.args.seed}'
+            progressive_acc_path = f'{self.args.output_dir}/../progressive_acc_{self.args.seed}'
+
+            print(f'Path of progressive f1 score: {progressive_f1_path}')
+            print(f'Path of progressive accuracy: {progressive_acc_path}')
 
             if os.path.exists(progressive_f1_path):
                 f1s = np.loadtxt(progressive_f1_path)
@@ -103,14 +104,14 @@ class Appr(object):
             np.savetxt(progressive_acc_path, accs, '%.4f', delimiter='\t')
 
             if self.args.ft_task == self.args.ntasks - 1:  # last ft task, we need a final one
-                final_f1 = os.path.join(self.args.output_dir + '/../', 'f1_' + str(self.args.seed))
-                final_acc = os.path.join(self.args.output_dir + '/../', 'acc_' + str(self.args.seed))
+                final_f1 = f'{self.args.output_dir}/../f1_{self.args.seed}'
+                final_acc = f'{self.args.output_dir}/../acc_{self.args.seed}'
 
-                forward_f1 = os.path.join(self.args.output_dir + '/../', 'forward_f1_' + str(self.args.seed))
-                forward_acc = os.path.join(self.args.output_dir + '/../', 'forward_acc_' + str(self.args.seed))
+                forward_f1 = f'{self.args.output_dir}/../forward_f1_{self.args.seed}'
+                forward_acc = f'{self.args.output_dir}/../forward_acc_{self.args.seed}'
 
-                print('final_f1: ', final_f1)
-                print('final_acc: ', final_acc)
+                print(f'Final f1 score: {final_f1}')
+                print(f'Final accuracy: {final_acc}')
 
                 if self.args.baseline == 'one':
                     with open(final_acc, 'w') as file, open(final_f1, 'w') as f1_file:
@@ -185,7 +186,7 @@ class Appr(object):
             for batch, inputs in enumerate(dataloader):
                 input_ids = inputs['input_ids']
 
-                res = model.model(**inputs, args=self.args, return_dict=True)
+                res = model.model(**inputs, return_dict=True)
 
                 real_b=input_ids.size(0)
                 loss = res.loss
